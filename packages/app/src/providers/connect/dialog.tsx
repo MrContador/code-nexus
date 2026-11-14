@@ -29,6 +29,7 @@ import { CONSOLE_INTEGRATION, type ProviderDialogBody, type ProviderDialogFrame 
 import { connectMethods, selectProviderConnectView, type ProviderConnectMethod } from "./machine"
 import type { ProviderFormInput, ProviderFormView } from "./form-machine"
 import { ConsoleAuthorization } from "./console"
+import { CustomProviderForm, useCustomProviderForm } from "./custom-provider-form"
 import { DialogChatGPTPlanWelcome } from "./chatgpt-welcome"
 import { authServerName, RemoteAuthNotice } from "./remote"
 import { providerAccounts } from "@/settings/providers/accounts"
@@ -95,6 +96,30 @@ export const DialogConnectProvider: Component<{
     onConnected: (provider) => props.onConnected?.(provider),
   })
 
+  const customProviderForm = useCustomProviderForm()
+  const sdk = useServerSDK()
+
+  const handleCustomProviderSave = async (data: any) => {
+    try {
+      await sdk.config.provider.set(data.id, {
+        npm: data.npm,
+        name: data.name,
+        options: {
+          baseURL: data.baseURL,
+          apiKey: data.apiKey || undefined,
+          headers: data.headers || undefined,
+        },
+        models: data.models,
+      })
+      showToast(language.t("provider.custom.toast.saved"))
+      customProviderForm.close()
+      // Refresh the provider list
+      controller.refresh()
+    } catch (error) {
+      showToast(formatServerError(error))
+    }
+  }
+
   const view = controller.view
   const frame = () => view().frame
   const consoleSelected = () => view().provider === CONSOLE_INTEGRATION
@@ -150,9 +175,9 @@ export const DialogConnectProvider: Component<{
       <DialogHeader closeLabel={language.t("common.close")}>
         <Switch>
           <Match when={frame() === "models" && view().provider}>
-            {(provider) => (
+            {(providerId) => (
               <div class="flex items-center gap-2">
-                <ProviderModelIcon provider={{ id: provider(), name: controller.providerName() }} class="shrink-0" />
+                <ProviderModelIcon provider={{ id: providerId, name: controller.providerName() }} class="shrink-0" />
                 <DialogTitle>
                   {language.t("provider.connect.models.title", { provider: controller.providerName() })}
                 </DialogTitle>
@@ -175,7 +200,7 @@ export const DialogConnectProvider: Component<{
             </div>
           </Match>
           <Match when={view().provider}>
-            {(provider) => (
+            {(providerId) => (
               <div class="flex min-w-0 flex-1 items-center gap-2">
                 <Show when={view().canBack}>
                   <button
@@ -188,7 +213,7 @@ export const DialogConnectProvider: Component<{
                   </button>
                 </Show>
                 <ProviderModelIcon
-                  provider={{ id: provider(), name: title() }}
+                  provider={{ id: providerId, name: title() }}
                   class="shrink-0 text-v2-icon-icon-base"
                 />
                 <DialogTitle>{title()}</DialogTitle>
@@ -218,12 +243,19 @@ export const DialogConnectProvider: Component<{
           <Show
             keyed
             when={view().provider}
-            fallback={<ProviderPicker directory={props.directory} onSelect={controller.select} onPrepare={holdFocus} />}
+            fallback={<ProviderPicker directory={props.directory} onSelect={controller.select} onPrepare={holdFocus} onAddCustom={customProviderForm.open} />}
           >
             {(provider) => <ProviderSteps provider={provider} controller={controller} />}
           </Show>
         </div>
       </DialogBody>
+      {customProviderForm.isOpen() && (
+        <CustomProviderForm
+          initialData={customProviderForm.initialData}
+          onSave={handleCustomProviderSave}
+          onCancel={customProviderForm.close}
+        />
+      )}
     </Dialog>
   )
 }
@@ -233,7 +265,7 @@ const CLAUDE_CODE_SETUP_URL = "https://code.claude.com/docs/en/setup"
 // The TUI's integration groups and order, with connected integrations pulled up into their own group first.
 const POPULAR = ["opencode", "opencode-go", "openai", "github-copilot", "anthropic", "google"]
 
-function ProviderPicker(props: { directory?: string; onSelect: (provider: string) => void; onPrepare?: () => void }) {
+function ProviderPicker(props: { directory?: string; onSelect: (provider: string) => void; onPrepare?: () => void; onAddCustom?: () => void }) {
   const integrations = useIntegrations(() => props.directory)
   const language = useLanguage()
 
@@ -248,8 +280,8 @@ function ProviderPicker(props: { directory?: string; onSelect: (provider: string
   const all = createMemo(() => {
     const query = store.filter.trim().toLowerCase()
 
-    return integrations
-      .list()
+    return (integrations.list() ?? [])
+      .filter((row): row is NonNullable<typeof row> => !!row)
       .filter((row) => row.metadata?.source !== "mcp")
       .filter((row) => !query || `${row.id} ${row.name}`.toLowerCase().includes(query))
   })
@@ -334,6 +366,17 @@ function ProviderPicker(props: { directory?: string; onSelect: (provider: string
           }}
         />
       </div>
+      <Show when={props.onAddCustom} fallback={<div />}> 
+        <Button
+          variant="outline"
+          size="small"
+          class="w-full justify-start"
+          leadingIcon={<Icon name="plus" size="small" />}
+          onClick={props.onAddCustom}
+        >
+          {language.t("provider.custom.add")}
+        </Button>
+      </Show>
       <div class="relative min-h-0 flex-1">
         <div class="flex size-full min-h-0 flex-col gap-0.5 overflow-y-auto pb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <For each={groups()}>

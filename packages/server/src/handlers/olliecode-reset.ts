@@ -236,7 +236,7 @@ export const OlliecodeResetLayer = HttpRouter.use((router) =>
         // preserve=1 re-enables the snapshot + reinsert blocks; everything
         // else in the fresh ritual (fingerprint rotate, WARP rotate, credential
         // wipe, sidecar exit) runs identically both ways.
-        const preserveSessions = url.searchParams.get("preserve") === "1"
+        // const preserveSessions = url.searchParams.get("preserve") === "1"
 
         // Server-authoritative gate for EVERY reset path, including the
         // default counter wipe. A cached license is not enough: the Worker
@@ -867,39 +867,7 @@ type WarpOutcome =
   | { status: "skipped"; reason: string }
   | { status: "failed"; step: string; error: string; ip_before?: string | null }
 
-function rotateWarp(): Effect.Effect<WarpOutcome & { warp_cycle?: WarpCycleOutcome }> {
-  return Effect.promise(async (): Promise<WarpOutcome & { warp_cycle?: WarpCycleOutcome }> => {
-    // Run Tor rotation and WARP rotation IN PARALLEL. Each shifts a
-    // different layer of identity:
-    //   - Tor rotation gives opencode.ai a new exit IP (routed via our
-    //     SOCKS5 dispatcher for opencode.ai hosts only).
-    //   - WARP rotation gives DIRECT traffic (non-Tor, non-opencode.ai)
-    //     a new Cloudflare exit. This matters for browsing + BYOK paths
-    //     that don't ride through Tor, so there's no residual identity
-    //     thread.
-    //
-    // Empirical result on 2026-11-08: `warp-cli disconnect` +
-    // `tunnel rotate-keys` + `connect` DOES rotate Cloudflare's assigned
-    // exit for this user's account (104.28.192.58 â†’ 104.28.192.60 in one
-    // test). My earlier conclusion that WARP couldn't rotate was wrong â€”
-    // I'd tested `rotate-keys` in isolation without the disconnect/connect
-    // cycle, which yields the same IP every time. The correct sequence
-    // works.
-    //
-    // Both rotations go concurrently so the pill latency is max(tor, warp),
-    // ~10s for Tor, ~5s for WARP â†’ total ~10s not 15s.
-    const [torResult, warpCycle] = await Promise.all([
-      doTorRotation(),
-      doWarpCycle(),
-    ])
-    // Primary outcome shape stays Tor's â€” the pill reads status / ip_before /
-    // ip_after and shows "IP X â†’ Y" from those, which should be the Tor exit
-    // (that's what opencode.ai actually SEES for our dispatched traffic).
-    // WARP's rotation data rides along in `warp_cycle` so the UI / log can
-    // surface it without breaking the existing shape.
-    return { ...finalizeDisplay(torResult), warp_cycle: warpCycle }
-  })
-}
+// const _rotateWarp = () => ...
 
 // The pill displays the real outcome. A fabricated "IP X -> Y" pair used to
 // be returned whenever the probe failed or the rotation was skipped, which
@@ -1064,7 +1032,7 @@ async function doWarpCycle(): Promise<WarpCycleOutcome> {
 // Row shape for dynamic snapshot/reinsert of session state. The inline
 // preserve inside the handler above pulls rows with SELECT * and hands
 // them back column-named.
-type Row = Record<string, unknown>
+// type Row = Record<string, unknown>
 
 // Generate a fresh ID matching opencode's own Identifier format:
 // prefix + 12 hex (timestamp) + 14 base62. Vendor schema validators check
@@ -1077,7 +1045,7 @@ type Row = Record<string, unknown>
 const _ID_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 let _idCounter = 0
 let _idLastTs = 0
-function mintId(oldId: string, fallbackPrefix: string): string {
+// function mintId(oldId: string, fallbackPrefix: string)
   const m = /^([a-z]{2,8}_)/.exec(oldId)
   const prefix = m ? m[1] : fallbackPrefix
   // 12-hex timestamp with monotonic counter so rapid mints don't collide.

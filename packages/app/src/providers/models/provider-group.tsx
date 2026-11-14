@@ -93,7 +93,7 @@ export function ProviderModelSections<T extends ModelItem>(props: {
   const name = (group: ModelGroup<T>) =>
     group.category === "opencode" && group.items.every((item) => !item.cost?.input)
       ? language.t("provider.connect.opencode.freeName")
-      : group.items[0].provider.name
+      : (group.items[0]?.provider?.name ?? group.category)
 
   function Header(input: { id: string; icon: JSX.Element; title: JSX.Element; badge?: string; action?: JSX.Element }) {
     return (
@@ -135,7 +135,7 @@ export function ProviderModelSections<T extends ModelItem>(props: {
                 >
                   <Header
                     id={group().category}
-                    icon={<ProviderModelIcon provider={group().items[0].provider} class="shrink-0" />}
+                    icon={<ProviderModelIcon provider={group().items[0]?.provider ?? { id: group().category, name: group().category }} class="shrink-0" />}
                     title={name(group())}
                     action={props.action?.(group())}
                   />

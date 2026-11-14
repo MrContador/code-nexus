@@ -94,7 +94,9 @@ const sortModelGroups = (a: { category: string; items: ModelItem[] }, b: { categ
 
   if (aPopular && bPopular) return aIndex - bIndex
 
-  return a.items[0].provider.name.localeCompare(b.items[0].provider.name)
+  const aName = a.items[0]?.provider?.name ?? a.category
+  const bName = b.items[0]?.provider?.name ?? b.category
+  return aName.localeCompare(bName)
 }
 
 const ModelList: Component<{

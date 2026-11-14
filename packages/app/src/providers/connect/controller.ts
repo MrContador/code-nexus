@@ -653,6 +653,7 @@ export function createProviderDialogController(options: {
 
       dispatch({ type: "link.copied", session: state.session, attemptID: authorization.attemptID, copied })
     },
+    refresh: () => dispatch({ type: "sync" }),
   }
 }
 

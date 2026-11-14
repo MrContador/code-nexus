@@ -20,6 +20,14 @@ export function configureApplication() {
     process.chdir(homedir())
   } catch {}
 
+  // Disable GPU early via env vars (must be set before app.ready)
+  if (process.platform === "win32") {
+    process.env.ELECTRON_DISABLE_GPU = "1"
+    process.env.ELECTRON_DISABLE_GPU_COMPOSITING = "1"
+    process.env.ELECTRON_DISABLE_SOFTWARE_RASTERIZER = "1"
+    process.env.ELECTRON_ENABLE_UNSAFE_SWIFTSHADER = "1"
+  }
+
   process.env.OPENCODE_DISABLE_EMBEDDED_WEB_UI = "true"
 
   app.setName(APP_NAME)
@@ -30,6 +38,18 @@ export function configureApplication() {
 
   // Chromium animates each mouse-wheel notch on Linux; native Linux apps scroll by the full delta immediately.
   if (process.platform === "linux") app.commandLine.appendSwitch("disable-smooth-scrolling")
+
+  // Disable GPU process to avoid crashes on problematic Windows drivers
+  if (process.platform === "win32") {
+    app.commandLine.appendSwitch("disable-gpu")
+    app.commandLine.appendSwitch("disable-gpu-compositing")
+    app.commandLine.appendSwitch("disable-gpu-sandbox")
+    app.commandLine.appendSwitch("disable-software-rasterizer")
+    app.commandLine.appendSwitch("enable-unsafe-swiftshader")
+    app.commandLine.appendSwitch("disable-accelerated-2d-canvas")
+    app.commandLine.appendSwitch("disable-accelerated-video-decode")
+    app.commandLine.appendSwitch("disable-accelerated-video-encode")
+  }
 
   const build = { packaged: app.isPackaged, channel: CHANNEL }
   const debugPort = remoteDebuggingPort(build, process.env.OPENCODE_DESKTOP_REMOTE_DEBUGGING_PORT)

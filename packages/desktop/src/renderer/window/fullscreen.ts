@@ -1,4 +1,4 @@
-import { createSignal } from "solid-js"
+import { createRoot, createSignal } from "solid-js"
 import { api } from "../api"
 import {
   createFullscreenState,
@@ -9,7 +9,10 @@ import {
 
 let state = createFullscreenState()
 
-const [windowFullscreen, setWindowFullscreen] = createSignal(selectWindowFullscreen(state))
+const [windowFullscreen, setWindowFullscreen] = createRoot(() => {
+  const [signal, setSignal] = createSignal(selectWindowFullscreen(state))
+  return [signal, setSignal]
+})
 
 const dispatch = (event: FullscreenEvent) => {
   const next = transitionFullscreen(state, event)

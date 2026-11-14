@@ -257,6 +257,8 @@ export function transitionProviderDialog(
 
   if (event.type === "back") return back(state)
 
+  if (event.type === "sync") return unchanged(state)
+
   if (event.type === "accounts.synced") return synced(state, event.accounts)
 
   if (event.type === "connect.input") {

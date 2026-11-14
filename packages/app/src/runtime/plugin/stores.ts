@@ -1,5 +1,6 @@
 import {
   batch,
+  createComputed,
   createMemo,
   createRenderEffect,
   createRoot,
@@ -281,12 +282,12 @@ export function createSessionStore<T extends object>(input: {
 
   // Drops the stores of sessions whose tabs closed. The routed session keeps its store, and so does one no tab has
   // listed yet, up to a bound: a deep link or a new session routes and preloads before the titlebar adds its tab.
-  createRenderEffect(() => {
+  createComputed(() => {
     const listed = new Set(input.sessions.list().map((session) => session.key))
     const routed = input.sessions.current()?.key
 
     untrack(() => dispatch({ type: "sync", listed, routed }))
-  })
+  }, undefined, { owner: input.owner })
 
   const create = (session: SessionRef) => {
     // The first ref stands in until the host lists the key, and again if its tab closes before the store drops.

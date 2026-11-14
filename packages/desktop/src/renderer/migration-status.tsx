@@ -2,7 +2,7 @@ import { OpenCode } from "@opencode/client/promise"
 import { useLanguage } from "@opencode/app/desktop"
 import { Loader } from "@opencode/ui/loader"
 import { showToast, toaster, Toast } from "@opencode/ui/toast"
-import { createEffect, createRoot, createSignal, onCleanup, onMount } from "solid-js"
+import { createEffect, createMemo, createRoot, createSignal, onCleanup, onMount } from "solid-js"
 import type { ServerReadyData } from "../shared/ipc-contract"
 import {
   createMigrationState,
@@ -76,6 +76,8 @@ export function MigrationStatus(props: { server: ServerReadyData }) {
           handle.dispose?.()
           handle.dispose = dispose
 
+          const progress = createMemo(() => selectMigrationProgress(state()))
+
           return (
             <Toast toastId={toastId}>
               <div data-slot="toast-v2-header" class="col-span-full">
@@ -83,7 +85,7 @@ export function MigrationStatus(props: { server: ServerReadyData }) {
                   <Loader />
                 </Toast.Icon>
                 <Toast.Content>
-                  <Toast.Title dir="auto">{format(selectMigrationProgress(state()))}</Toast.Title>
+                  <Toast.Title dir="auto">{format(progress())}</Toast.Title>
                 </Toast.Content>
               </div>
             </Toast>

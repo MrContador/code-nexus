@@ -63,7 +63,9 @@ export const DialogManageModels: Component = () => {
 
       if (aPopular && bPopular) return aRank - bRank
 
-      return a.items[0].provider.name.localeCompare(b.items[0].provider.name)
+      const aName = a.items[0]?.provider?.name ?? a.category
+      const bName = b.items[0]?.provider?.name ?? b.category
+      return aName.localeCompare(bName)
     },
   })
 
@@ -161,14 +163,16 @@ export const DialogManageModels: Component = () => {
                   onExpandedChange={(key, value) => setStore("collapsed", key, !value)}
                   onSetVisibility={setProviderVisibility}
                   action={(group) => (
-                    <Switch
-                      class="me-6"
-                      checked={providerVisible(group.category)}
-                      onChange={(checked) => setProviderVisibility(group.category, checked)}
-                      hideLabel
-                    >
-                      {group.items[0].provider.name}
-                    </Switch>
+                    <Show when={group.items[0]?.provider?.name}>
+                      <Switch
+                        class="me-6"
+                        checked={providerVisible(group.category)}
+                        onChange={(checked) => setProviderVisibility(group.category, checked)}
+                        hideLabel
+                      >
+                        {group.items[0].provider.name}
+                      </Switch>
+                    </Show>
                   )}
                   rows={(items) => <ModelRows items={items} />}
                 />

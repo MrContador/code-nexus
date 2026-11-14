@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import { nextDesktopZoomLevel, type DesktopZoomLevel } from "@opencode/app/desktop-menu"
-import { createSignal } from "solid-js"
+import { createRoot, createSignal } from "solid-js"
 import { api } from "../api"
 import {
   createZoomState,
@@ -26,9 +26,15 @@ const OS_NAME = (() => {
   return "unknown"
 })()
 
-const [webviewZoom, setWebviewZoom] = createSignal(1)
+const [webviewZoom, setWebviewZoom] = createRoot(() => {
+  const [signal, setSignal] = createSignal(1)
+  return [signal, setSignal]
+})
 
-const [zoomLevel, setZoomLevelSignal] = createSignal<DesktopZoomLevel>(1)
+const [zoomLevel, setZoomLevelSignal] = createRoot(() => {
+  const [signal, setSignal] = createSignal<DesktopZoomLevel>(1)
+  return [signal, setSignal]
+})
 
 let state = createZoomState()
 

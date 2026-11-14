@@ -5,7 +5,10 @@ declare const OPENCODE_CHANNEL: string
 declare const OPENCODE_ARTIFACT: string
 declare const OPENCODE_RELEASE_HIGHLIGHTS: string
 
-const version = typeof OPENCODE_VERSION === "string" ? OPENCODE_VERSION : "local"
+// Runtime version: prefer env (set by desktop --define), fallback to build-time define
+const version = (typeof process !== "undefined" && process.env?.OPENCODE_VERSION)
+  ? process.env.OPENCODE_VERSION
+  : (typeof OPENCODE_VERSION === "string" ? OPENCODE_VERSION : "local")
 const channel = typeof OPENCODE_CHANNEL === "string" ? OPENCODE_CHANNEL : "local"
 const artifact = typeof OPENCODE_ARTIFACT === "string" ? OPENCODE_ARTIFACT : "cli"
 // Stable release builds embed the release notes' Highlights; every other build has none.
