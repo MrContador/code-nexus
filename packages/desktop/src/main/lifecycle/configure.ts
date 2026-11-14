@@ -64,7 +64,7 @@ export function configureApplication() {
     app.commandLine.appendSwitch("enable-precise-memory-info")
 
   const testRoot = createTestRoot()
-  app.setPath("userData", testRoot ? path.join(testRoot, "desktop") : path.join(app.getPath("appData"), APP_ID))
+  app.setPath("userData", testRoot ? path.join(testRoot, "desktop") : path.join(app.getPath("appData") || process.env.APPDATA || path.join(homedir(), "AppData", "Roaming"), APP_ID))
 
   if (testRoot) {
     app.setPath("sessionData", path.join(testRoot, "session"))

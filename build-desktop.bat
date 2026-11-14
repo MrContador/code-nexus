@@ -2,7 +2,10 @@
 title OlliEcode Builder & Runner
 cd /d "%~dp0"
 
-echo [1/3] Construindo CLI...
+echo [1/4] Fechando instancias abertas do app...
+powershell -Command "Stop-Process -Name 'olliEcode Dev' -Force -ErrorAction SilentlyContinue"
+
+echo [2/4] Construindo CLI...
 cd packages\cli
 call bun run build
 if %errorlevel% neq 0 (
@@ -11,7 +14,7 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
-echo [2/3] Construindo Desktop (Windows x64)...
+echo [3/4] Construindo Desktop (Windows x64)...
 cd ..\desktop
 set OPENCODE_TARGET=windows-x64
 call bun run script/build.ts
@@ -21,7 +24,7 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
-echo [3/3] Empacotando Electron...
+echo [4/4] Empacotando Electron...
 call bun run script/pack.ts
 if %errorlevel% neq 0 (
     echo Erro ao empacotar o app desktop!
@@ -31,7 +34,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo ==========================================
-echo  Build concluido com sucesso!
+echo  Build e empacotamento concluidos!
 echo  Executavel gerado em: packages\desktop\dist\win-unpacked\olliEcode Dev.exe
 echo ==========================================
 pause
