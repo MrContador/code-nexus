@@ -50,8 +50,8 @@ export function CustomProviderForm(props: {
   const [modelRows, setModelRows] = createSignal<Array<{ id: string; name: string; context?: number; output?: number }>>([])
   const [showAdvanced, setShowAdvanced] = createSignal(false)
 
-  // Load draft from localStorage
-  createEffect(() => {
+  // Load draft from localStorage on mount only
+  onMount(() => {
     try {
       const saved = localStorage.getItem(CUSTOM_PROVIDER_PERSIST_KEY)
       if (saved) {

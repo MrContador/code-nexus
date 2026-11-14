@@ -1045,7 +1045,7 @@ async function doWarpCycle(): Promise<WarpCycleOutcome> {
 const _ID_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 let _idCounter = 0
 let _idLastTs = 0
-// function mintId(oldId: string, fallbackPrefix: string)
+function mintId(oldId: string, fallbackPrefix: string): string {
   const m = /^([a-z]{2,8}_)/.exec(oldId)
   const prefix = m ? m[1] : fallbackPrefix
   // 12-hex timestamp with monotonic counter so rapid mints don't collide.
