@@ -1,14 +1,15 @@
-import { app, ipcMain, type WebContents } from "electron"
+import { ipcMain, type WebContents } from "electron"
 import { WindowSnapshotChannel, type WindowSnapshot } from "../../shared/ipc-transport"
 import { isRendererUrl } from "../windows/scheme"
 import { readWindowSnapshot } from "./window-snapshot"
+import { getAppPath } from "../paths-safe"
 
 // A window's preload asks for the namespaces its shell reads before the page runs, so the first
 // render is the hydrated one. Until the storage layer is up (the first window asks before it exists)
 // the answer comes from the database file; the layer takes over so later windows see queued writes.
 type Provider = (names: ReadonlyArray<string>) => WindowSnapshot
 
-let provider: Provider = (names) => readWindowSnapshot(app.getPath("userData"), names)
+let provider: Provider = (names) => readWindowSnapshot(getAppPath("userData"), names)
 
 export function setStorageSnapshotProvider(next: Provider) {
   provider = next

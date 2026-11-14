@@ -9,6 +9,7 @@ import { createDraftStore } from "./drafts"
 import { importLegacyStores } from "./legacy"
 import { createStateStore } from "./state"
 import { readEnableState } from "../plugin/enable-state"
+import { getAppPath } from "../paths-safe"
 
 export type Interface = ReturnType<typeof make>
 
@@ -19,7 +20,7 @@ export const layer = Layer.effect(
   Effect.gen(function* () {
     const path = yield* Path.Path
     const runFork = Effect.runForkWith(yield* Effect.context())
-    const userData = app.getPath("userData")
+    const userData = getAppPath("userData")
 
     const storage = make(path.join(userData, "drafts.sqlite"), (error) =>
       runFork(Effect.logError("storage flush failed", { error })),

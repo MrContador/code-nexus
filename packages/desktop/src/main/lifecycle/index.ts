@@ -10,6 +10,7 @@ import { safeWebContentsURL } from "../windows/state"
 import { getLastFocusedWindow, mainWindows } from "../windows"
 import type { Scope } from "@opencode/plugin/gui/host"
 import { marks } from "./marks"
+import { getAppPath } from "../paths-safe"
 import {
   createDriver,
   preventsQuit,
@@ -213,7 +214,7 @@ export const layer = Layer.unwrap(
   Effect.gen(function* () {
     // Decide first-launch state before the storage layer creates drafts.sqlite, which would
     // otherwise read as evidence of an earlier launch on a fresh install.
-    yield* initializeFirstLaunchOnboarding(app.getPath("userData"))
+    yield* initializeFirstLaunchOnboarding(getAppPath("userData"))
     marks.onboarding = Date.now()
 
     return runtime.pipe(Layer.provideMerge(platform))

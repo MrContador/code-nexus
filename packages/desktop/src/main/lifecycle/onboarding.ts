@@ -1,10 +1,10 @@
-import { app } from "electron"
 import { Effect, Exit, FileSystem, Option, Path, Predicate } from "effect"
 import { scoped } from "../native/logging"
 import { hasExistingAppState } from "../storage/install-state"
 import { FIRST_LAUNCH_ONBOARDING_COMPLETE_KEY } from "../storage/keys"
 import { getStore } from "../storage/store"
 import { nativeT } from "../native/translations"
+import { getAppPath } from "../paths-safe"
 import {
   createMainOnboardingState,
   selectOnboardingPending,
@@ -68,7 +68,7 @@ export const finishFirstLaunchOnboarding = Effect.fn("Onboarding.finish")(functi
   const path = yield* Path.Path
 
   const defaultProject = createDefaultProject
-    ? path.join(app.getPath("documents"), nativeT("desktop.onboarding.defaultProject"))
+    ? path.join(getAppPath("documents"), nativeT("desktop.onboarding.defaultProject"))
     : null
 
   // Claimed before the first await, so a second window finishing meanwhile neither creates the project nor opens a draft.

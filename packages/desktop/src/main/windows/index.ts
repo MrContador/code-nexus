@@ -10,6 +10,7 @@ import { WINDOW_IDS_KEY } from "../storage/keys"
 import { windowDataFile } from "../../shared/ipc-transport"
 import { isQuitting, type State } from "../lifecycle/machine"
 import { windowArguments } from "./bootstrap"
+import { getAppPath } from "../paths-safe"
 import {
   getBackgroundColor,
   getPinchZoomEnabled,
@@ -129,7 +130,7 @@ export const mainWindows = Effect.fn("Window.make")(function* (input: {
     }).map((step) => create(step.id, step.kind === "adopt" ? step.entry : undefined))
 
   const create = (id: string = randomUUID(), early?: EarlyWindow) => {
-    const stateFile = path.join(app.getPath("userData"), windowStateFile(id))
+    const stateFile = path.join(getAppPath("userData"), windowStateFile(id))
     const state = early?.state ?? resolveWindowState(readWindowState(stateFile), { width: 1280, height: 800 }, displays)
     const appearance = windowAppearance(path, paths)
 
@@ -215,7 +216,7 @@ export const mainWindows = Effect.fn("Window.make")(function* (input: {
       runFork(
         Effect.gen(function* () {
           yield* Effect.try(() => storage.state.clear(windowDataFile(id)))
-          yield* fs.remove(path.join(app.getPath("userData"), windowStateFile(id)), { force: true })
+          yield* fs.remove(path.join(getAppPath("userData"), windowStateFile(id)), { force: true })
         }).pipe(
           Effect.catch((error) => scoped("window", Effect.logError("failed to clean window state", { id, error }))),
         ),

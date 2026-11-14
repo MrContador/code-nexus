@@ -12,6 +12,7 @@ import { keptStages, serviceVersion, shouldRetryEnsure } from "./cli-version"
 import { DesktopCli } from "./desktop-cli"
 import { SidecarCredentials } from "./sidecar-credentials"
 import { takeSidecarProbe } from "./sidecar-probe"
+import { getAppPath } from "../paths-safe"
 
 export * as BackgroundService from "./background-service"
 
@@ -144,7 +145,7 @@ const prepare = Effect.fn("BackgroundService.prepare")(function* (mode: Backgrou
   const cli = yield* desktopCli.resolve
   const version = serviceVersion({ channel: CHANNEL, isolated, mode, version: cli.version })
 
-  const stateHome = dedicated || isolated ? app.getPath("userData") : undefined
+  const stateHome = dedicated || isolated ? getAppPath("userData") : undefined
   if (stateHome !== undefined) process.env.XDG_STATE_HOME = stateHome
   const client = yield* Effect.promise(() => import("@opencode/client/service"))
 

@@ -10,6 +10,7 @@ import { windowArguments } from "./bootstrap"
 import { WINDOW_IDS_KEY } from "../storage/keys"
 import { getStore } from "../storage/store"
 import { platformFrame, storedZoomLevel, tone } from "./defaults"
+import { getAppPath } from "../paths-safe"
 import {
   initialEarlyWindowState,
   isEarlyWindowClosed,
@@ -104,15 +105,12 @@ function writeSplashReadyFlag() {
 // colour stands in for the theme until the renderer applies it, so the window is on screen while the
 // bundle, the layers and the renderer boot. restoreWindows() adopts it through restoreEarlyWindow().
 export function createEarlyWindow() {
-  // Guard: app must be ready and userData path must be set before creating the early window.
+  // Guard: app must be ready before creating the early window.
   // This function is designed to be called only from app.whenReady().then(...).
   if (!app.isReady()) {
     throw new Error("createEarlyWindow() called before app.ready")
   }
-  const userData = app.getPath("userData")
-  if (!userData) {
-    throw new Error("app.getPath('userData') returned empty")
-  }
+  const userData = getAppPath("userData")
   const id = persistedWindowIDs(getStore().get(WINDOW_IDS_KEY))[0] ?? randomUUID()
   const root = path.dirname(fileURLToPath(import.meta.url))
   const file = path.join(userData, windowStateFile(id))

@@ -11,7 +11,13 @@ const raw = import.meta.env.OPENCODE_CHANNEL
 // tree worked while the desktop was being rate-limited.
 export const CHANNEL: Channel = raw === "local" || raw === "dev" || raw === "beta" || raw === "prod" ? raw : "local"
 
-export const VERSION = app.isPackaged ? app.getVersion() : (process.env.OPENCODE_VERSION ?? app.getVersion())
+export const VERSION = (() => {
+  try {
+    return app.isPackaged ? app.getVersion() : (process.env.OPENCODE_VERSION ?? app.getVersion())
+  } catch {
+    return "1.0.0"
+  }
+})()
 
 // Drives app.setName(), which feeds the Windows taskbar/Alt-Tab tooltip,
 // the macOS Dock/menu bar label, and the userData folder name. Must match

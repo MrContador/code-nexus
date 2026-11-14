@@ -9,6 +9,7 @@ import installer from "../../../../../install?raw"
 import { DesktopPaths } from "../paths"
 import { BUNDLED_CLI_VERSION_KEY } from "../storage/keys"
 import { getStore } from "../storage/store"
+import { getAppPath } from "../paths-safe"
 import { parseCliVersion, stageName } from "./cli-version"
 import { DesktopCliState } from "./desktop-cli-state"
 
@@ -45,7 +46,7 @@ export const layer = Layer.effect(
       const cli = yield* resolve
 
       if (!cli.binary) return yield* Effect.fail(new Error("Bundled CLI executable is unavailable"))
-      const home = app.getPath("home")
+      const home = getAppPath("home")
       yield* runInstaller(cli.binary, home)
 
       return path.join(home, ".opencode", "bin", "opencode")
@@ -146,7 +147,7 @@ const installCli = Effect.fn("DesktopCli.install")(function* (source: string, ve
   const path = yield* Path.Path
   // x64 and ARM64 installers share userData on Windows ARM64, so a same-version switch must not reuse the other copy.
   const stage = stageName(version)
-  const directory = path.join(app.getPath("userData"), "cli", stage)
+  const directory = path.join(getAppPath("userData"), "cli", stage)
   const destination = path.join(directory, executableName())
 
   if (existsSync(destination)) {

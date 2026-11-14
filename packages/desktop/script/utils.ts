@@ -3,7 +3,7 @@ import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { Option, Schema } from "effect"
 
-const CLI_VERSION = "dev"
+const CLI_VERSION = "2.2.5"
 
 const Manifest = Schema.fromJsonString(Schema.Struct({ version: Schema.NonEmptyString }))
 

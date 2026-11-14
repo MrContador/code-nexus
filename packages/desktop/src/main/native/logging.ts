@@ -18,6 +18,7 @@ import {
   Stream,
 } from "effect"
 import { homedir } from "node:os"
+import { getAppPath } from "../paths-safe"
 import { VERSION } from "../constants"
 import { marks } from "../lifecycle/marks"
 import {
@@ -254,7 +255,7 @@ function initLogging(fs: FileSystem.FileSystem, path: Path.Path) {
 
 function initCrashReporter(fs: FileSystem.FileSystem, path: Path.Path) {
   return Effect.gen(function* () {
-    const dir = path.join(app.getPath("userData"), "Crashpad")
+    const dir = path.join(getAppPath("userData"), "Crashpad")
     yield* fs.makeDirectory(dir, { recursive: true })
     yield* Effect.sync(() => {
       app.setPath("crashDumps", dir)
@@ -266,13 +267,13 @@ function initCrashReporter(fs: FileSystem.FileSystem, path: Path.Path) {
 
 function writeDebugArchive(fs: FileSystem.FileSystem, path: Path.Path, netLogPath: string | undefined) {
   return Effect.gen(function* () {
-    const output = path.join(app.getPath("downloads"), `opencode-debug-${stamp()}.zip`)
+    const output = path.join(getAppPath("downloads"), `opencode-debug-${stamp()}.zip`)
     yield* Effect.logInfo("exporting debug logs", { output })
 
     const files = [
       ...(yield* collect(fs, path, root, "desktop")),
       ...(yield* Effect.forEach(serverLogRoots(path), (dir, i) => collect(fs, path, dir, `server-${i + 1}`))).flat(),
-      ...(yield* collect(fs, path, app.getPath("crashDumps"), "crashpad")),
+      ...(yield* collect(fs, path, getAppPath("crashDumps"), "crashpad")),
     ]
 
     const truncated = files.flatMap((file) => (file.offset > 0 ? [file.name] : []))
@@ -290,7 +291,7 @@ function writeDebugArchive(fs: FileSystem.FileSystem, path: Path.Path, netLogPat
 }
 
 function initRunDirectory(fs: FileSystem.FileSystem, path: Path.Path) {
-  root = path.join(app.getPath("userData"), "logs")
+  root = path.join(getAppPath("userData"), "logs")
   run = path.join(root, stamp())
 
   return fs.makeDirectory(run, { recursive: true })
@@ -338,10 +339,10 @@ function manifest(path: Path.Path, netLogPath: string | undefined) {
     arch: process.arch,
     versions: process.versions,
     uptime: process.uptime(),
-    userData: app.getPath("userData"),
+    userData: getAppPath("userData"),
     logs: root,
     currentRun: run,
-    crashDumps: app.getPath("crashDumps"),
+    crashDumps: getAppPath("crashDumps"),
     serverLogs: serverLogRoots(path),
     netLog: netLogPath,
   }
@@ -350,7 +351,7 @@ function manifest(path: Path.Path, netLogPath: string | undefined) {
 function serverLogRoots(path: Path.Path) {
   const xdgData = process.env.XDG_DATA_HOME || path.join(homedir(), ".local", "share")
 
-  return [...new Set([path.join(xdgData, "opencode", "log"), path.join(app.getPath("userData"), "opencode", "log")])]
+  return [...new Set([path.join(xdgData, "opencode", "log"), path.join(getAppPath("userData"), "opencode", "log")])]
 }
 
 type Entry = { name: string; path: string; offset: number } | { name: string; data: Uint8Array }

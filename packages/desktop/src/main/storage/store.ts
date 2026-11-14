@@ -1,9 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import { Option, Schema } from "effect"
-import { app } from "electron"
 
 import { SETTINGS_STORE } from "./keys"
+import { getAppPath } from "../paths-safe"
 
 /** The file: one JSON object, each key a setting whose reader decodes its value. */
 const SettingsFile = Schema.fromJsonString(Schema.Record(Schema.String, Schema.Json))
@@ -27,7 +27,7 @@ export function getStore(name = SETTINGS_STORE) {
   const cached = cache.get(name)
 
   if (cached) return cached
-  const next = createSettingsStore(path.join(app.getPath("userData"), name))
+  const next = createSettingsStore(path.join(getAppPath("userData"), name))
   cache.set(name, next)
 
   return next
