@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import { Option, Schema } from "effect"
-import electron from "electron"
+import { app } from "electron"
 
 import { SETTINGS_STORE } from "./keys"
 
@@ -27,7 +27,7 @@ export function getStore(name = SETTINGS_STORE) {
   const cached = cache.get(name)
 
   if (cached) return cached
-  const next = createSettingsStore(path.join(electron.app.getPath("userData"), name))
+  const next = createSettingsStore(path.join(app.getPath("userData"), name))
   cache.set(name, next)
 
   return next

@@ -92,7 +92,8 @@ const displays = {
 const SPLASH_READY_FLAG = path.join(os.tmpdir(), "olliecode-splash-done.flag")
 function writeSplashReadyFlag() {
   try {
-    fs.writeFileSync(SPLASH_READY_FLAG, `${process.pid}\n${Date.now()}\n${app.getVersion()}\n`)
+    const version = app.isReady() ? app.getVersion() : "unknown"
+    fs.writeFileSync(SPLASH_READY_FLAG, `${process.pid}\n${Date.now()}\n${version}\n`)
   } catch {
     /* best-effort; splash has a window-title + 90s deadline fallback */
   }
@@ -103,9 +104,18 @@ function writeSplashReadyFlag() {
 // colour stands in for the theme until the renderer applies it, so the window is on screen while the
 // bundle, the layers and the renderer boot. restoreWindows() adopts it through restoreEarlyWindow().
 export function createEarlyWindow() {
+  // Guard: app must be ready and userData path must be set before creating the early window.
+  // This function is designed to be called only from app.whenReady().then(...).
+  if (!app.isReady()) {
+    throw new Error("createEarlyWindow() called before app.ready")
+  }
+  const userData = app.getPath("userData")
+  if (!userData) {
+    throw new Error("app.getPath('userData') returned empty")
+  }
   const id = persistedWindowIDs(getStore().get(WINDOW_IDS_KEY))[0] ?? randomUUID()
   const root = path.dirname(fileURLToPath(import.meta.url))
-  const file = path.join(app.getPath("userData"), windowStateFile(id))
+  const file = path.join(userData, windowStateFile(id))
   const state = resolveWindowState(readWindowState(file), { width: 1280, height: 800 }, displays)
   const zoom = storedZoomLevel()
   const icons = app.isPackaged ? path.join(process.resourcesPath, "icons") : path.join(root, "../../resources/icons")
