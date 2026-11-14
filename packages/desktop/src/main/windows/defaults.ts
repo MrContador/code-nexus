@@ -66,7 +66,9 @@ export function platformFrame(mode: "light" | "dark", zoom: number) {
   if (process.platform === "win32") {
     frame.frame = false
     frame.titleBarStyle = "hidden"
-    frame.titleBarOverlay = titlebarOverlay(mode, zoom)
+    try {
+      frame.titleBarOverlay = titlebarOverlay(mode, zoom)
+    } catch {}
     // DWM rounds every top-level window on Windows 11. On a per-pixel
     // transparent surface that is another full-window pass on every move and
     // resize, and the corner is invisible anyway because the app paints its

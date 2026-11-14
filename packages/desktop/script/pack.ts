@@ -26,9 +26,9 @@ const flags = [`--${os}`, `--${cli.cpu}`, "--publish", "never", "--config", "ele
 
 process.chdir(dir)
 
-await rm("dist", { recursive: true, force: true })
+await rm("dist", { recursive: true, force: true }).catch(() => {})
 
-await rm(out, { recursive: true, force: true })
+await rm(out, { recursive: true, force: true }).catch(() => {})
 
 await mkdir(out, { recursive: true })
 
