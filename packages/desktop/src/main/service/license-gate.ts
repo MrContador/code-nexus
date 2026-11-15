@@ -19,7 +19,9 @@ import { licenseAppearance, licenseBackground, licenseThemeListener } from "./li
 // terminal users; it reads/writes the SAME license.json this engine does,
 // so a key activated here works for the CLI sidecar and vice-versa.
 
-import { app, BrowserWindow, desktopCapturer, ipcMain, Menu, powerMonitor, screen, shell } from "electron"
+import electron from "electron"
+const { app, BrowserWindow, desktopCapturer, Menu, powerMonitor, screen, shell } = electron
+const ipcMain = electron.ipcMain
 import { installedBuild } from "./shield"
 import crypto from "node:crypto"
 import fs from "node:fs"

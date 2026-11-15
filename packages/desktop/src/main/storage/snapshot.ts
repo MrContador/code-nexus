@@ -1,4 +1,5 @@
-import { ipcMain, type WebContents } from "electron"
+import electron, { type WebContents } from "electron"
+const ipcMain = electron.ipcMain
 import { WindowSnapshotChannel, type WindowSnapshot } from "../../shared/ipc-transport"
 import { isRendererUrl } from "../windows/scheme"
 import { readWindowSnapshot } from "./window-snapshot"

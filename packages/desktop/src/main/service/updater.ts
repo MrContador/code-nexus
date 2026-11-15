@@ -33,7 +33,9 @@
 // - No per-file verification of the downloaded installer's contents.
 //   That's the signed-manifest layer's job AFTER install completes.
 
-import { app, BrowserWindow, dialog, ipcMain } from "electron"
+import electron from "electron"
+const { app, BrowserWindow, dialog } = electron
+const ipcMain = electron.ipcMain
 import crypto from "node:crypto"
 import { spawn } from "node:child_process"
 import * as fs from "node:fs"

@@ -1,4 +1,6 @@
-import { app, ipcMain, Menu, shell } from "electron"
+import electron from "electron"
+const { app, Menu, shell } = electron
+const ipcMain = electron.ipcMain
 import fs from "node:fs"
 import path from "node:path"
 
