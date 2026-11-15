@@ -2,6 +2,7 @@
 dist/
 out/
 .cache/
+.bun-cache/
 .turbo/
 *.log
 *.db
