@@ -45,8 +45,9 @@ export interface BlueprintOptions {
 }
 
 /**
- * Next-Concept Modeling (NCM) - Stanford Hazy Research
- * Ref: https://hazyresearch.stanford.edu/blog/2026-10-12-ncm
+ * O Motor Híbrido LLM + NCM 2.0 (Next-Concept Modeling)
+ * Créditos: Mörlsara
+ * Ref: Stanford Hazy Research (https://hazyresearch.stanford.edu/blog/2026-10-12-ncm)
  *
  * Upper Semantic & Heuristic Layer operating directly on the host environment:
  * 1. Ground-Truth Manifest: 0-token physical filesystem preflight check (0ms LLM latency).
@@ -289,7 +290,7 @@ export function generateBlueprint(options: BlueprintOptions): string {
 
   const lines: string[] = [
     "================================================================================",
-    "[NCM // NEXT-CONCEPT MODELING (STANFORD HAZY RESEARCH)]",
+    "[MOTOR HIBRIDO LLM + NCM 2.0 // CREDITOS: MÖRLSARA]",
     "SUPERIOR HEURISTIC LAYER - COGNITIVE BLUEPRINT (GROUND-TRUTH 0-TOKEN HOST PREFLIGHT)",
     "REF: https://hazyresearch.stanford.edu/blog/2026-10-12-ncm",
     "================================================================================",

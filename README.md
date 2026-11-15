@@ -32,6 +32,12 @@ The app uses OpenCode's provider. Users can connect their own provider key in Se
 
 The toggle is in Settings. The Auto JB prompt is included in `packages/core/src/plugin/abliterated-AGENTS.md`. Edit it in Settings or replace the file.
 
+## O Motor Híbrido LLM + NCM 2.0
+
+- **Créditos**: Mörlsara
+- **Referência Teórica**: [Stanford Hazy Research — Next-Concept Modeling (NCM)](https://hazyresearch.stanford.edu/blog/2026-10-12-ncm)
+- Camada Heurística e Semântica Superior com preflight Ground-Truth físico direto no host (0ms / 0 tokens LLM), Matriz Heurística de Transição H1..H5 e isolamento determinístico do Conceito Vencedor H*.
+
 ## License
 
 MIT. Upstream copyright belongs to the OpenCode authors. Fork changes are published under the same license.

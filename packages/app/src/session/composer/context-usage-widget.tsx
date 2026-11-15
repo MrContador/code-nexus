@@ -449,7 +449,7 @@ export function SessionContextUsageWidget(props: { sessionID?: string }) {
                 target="_blank"
                 rel="noreferrer noopener"
                 class="text-[10px] font-mono text-teal-400/90 hover:text-teal-300 font-medium tracking-tight hover:underline inline-flex items-center gap-1 transition-colors cursor-pointer"
-                title="Next-Concept Modeling (NCM) - Stanford Hazy Research"
+                title="O Motor Híbrido LLM + NCM 2.0 (Créditos: Mörlsara) - Stanford Hazy Research"
               >
                 <span>NCM</span>
                 <span class="text-[9px] opacity-75">↗</span>
