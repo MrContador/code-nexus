@@ -1,3 +1,4 @@
+import { useSettingsSurface } from "@/settings/surface"
 import { useCommand, type CommandOption } from "@/shell/commands/command"
 import { useLanguage } from "@/runtime/i18n/language"
 import { DialogSelectModel } from "@/providers/models/select-dialog"
@@ -20,6 +21,7 @@ const withCategory = (category: string) => {
 }
 
 export const useComposerCommands = (input: { model?: ModelSelection } = {}) => {
+  const surface = useSettingsSurface()
   const command = useCommand()
   const dialog = useDialog()
   const language = useLanguage()
@@ -126,7 +128,35 @@ export const useComposerCommands = (input: { model?: ModelSelection } = {}) => {
       id: "usage.view",
       title: language.t("command.usage.view"),
       description: language.t("command.usage.view.description"),
+      slash: "usage",
       onSelect: () => void viewUsage(),
+    }),
+    viewCommand({
+      id: "usage.stats",
+      title: "Histórico de uso",
+      description: "Ver estatísticas completas de tokens, mapa de calor e modelos",
+      slash: "stats",
+      onSelect: () => void viewUsage(),
+    }),
+    viewCommand({
+      id: "skills.hub",
+      title: "SkillHub (biSkills)",
+      description: "Gerencie skills instaladas ou instale pacotes do open-skills",
+      slash: "skills",
+      onSelect: () => {
+        surface.open("extensions")
+        surface.subtab("skills")
+      },
+    }),
+    viewCommand({
+      id: "skills.hub.alias",
+      title: "SkillHub (biSkills)",
+      description: "Gerencie skills instaladas ou instale pacotes do open-skills",
+      slash: "skillhub",
+      onSelect: () => {
+        surface.open("extensions")
+        surface.subtab("skills")
+      },
     }),
     providerCommand({
       id: "provider.connect",

@@ -1,13 +1,13 @@
 import { createUniqueId, type ComponentProps } from "solid-js"
 
-// olliEcode splash + hero wordmark.
+// Code Nexus splash + hero wordmark.
 //
 // Nine letters — o l l i E c o d e — on the same 234×42 viewBox the small
 // Logo uses (overlay/packages/ui/src/components/logo.tsx). Downstream the
 // splash renders this with `w-4/5` + `h-auto`, so the aspect ratio of the
 // viewBox is all that matters — the browser scales it to whatever pixel size
 // the layout allocates. The parent used to pass a 720×129 opencode glyph set
-// here; swapping that for the olliEcode geometry replaces the loading-screen
+// here; swapping that for the Code Nexus geometry replaces the loading-screen
 // wordmark without touching the splash layout code.
 //
 // Letter grid (6px pixel grid, variable widths with 6px gaps):
@@ -43,24 +43,18 @@ export function Wordmark(
             stroke={props.outline ? "currentColor" : undefined}
             stroke-width={props.outline ? 1 : undefined}
           >
-            {/* o — "user" side */}
-            <path pathLength={props.outline ? 1 : undefined} d="M21 12H9V30H21V12ZM27 36H3V6H27V36Z" />
-            {/* l */}
-            <path pathLength={props.outline ? 1 : undefined} d="M33 6H39V30H45V36H33V6Z" />
-            {/* l */}
-            <path pathLength={props.outline ? 1 : undefined} d="M51 6H57V30H63V36H51V6Z" />
-            {/* i */}
-            <path pathLength={props.outline ? 1 : undefined} d="M72 6H78V12H72V6ZM72 15H78V36H72V15Z" />
-            {/* E (uppercase, mid-brand accent) */}
-            <path pathLength={props.outline ? 1 : undefined} d="M111 24H93V30H111V36H87V6H111V24ZM93 18H105V12H93V18Z" />
-            {/* c — "code" side */}
-            <path pathLength={props.outline ? 1 : undefined} d="M141 12H123V30H141V36H117V6H141V12Z" />
-            {/* o */}
-            <path pathLength={props.outline ? 1 : undefined} d="M165 12H153V30H165V12ZM171 36H147V6H171V36Z" />
-            {/* d */}
-            <path pathLength={props.outline ? 1 : undefined} d="M195 12H183V30H195V12ZM201 36H177V6H195V0H201V36Z" />
-            {/* e */}
-            <path pathLength={props.outline ? 1 : undefined} d="M213 12V18H225V12H213ZM231 24H213V30H231V36H207V6H231V24Z" />
+            <text
+              x="117"
+              y="25"
+              text-anchor="middle"
+              dominant-baseline="central"
+              font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+              font-weight="800"
+              font-size="28"
+              letter-spacing="-0.03em"
+            >
+              Code Nexus
+            </text>
           </g>
         </g>
       </g>

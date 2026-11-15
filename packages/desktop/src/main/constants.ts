@@ -4,7 +4,7 @@ type Channel = "local" | "dev" | "beta" | "prod"
 
 const raw = import.meta.env.OPENCODE_CHANNEL
 
-// olliEcode: default to "local" so the User-Agent sent to opencode.ai matches
+// Code Nexus: default to "local" so the User-Agent sent to opencode.ai matches
 // the standalone CLI build (opencode/local/<ver>/opencode-cli). Opencode.ai
 // appears to apply looser free-tier limits to "local" (dev-tree) builds than
 // to the "dev" nightly channel, which is why the TUI from the same source
@@ -23,20 +23,21 @@ export const VERSION = (() => {
 // the macOS Dock/menu bar label, and the userData folder name. Must match
 // electron-builder productName so an upgraded install finds its own state.
 const appNames: Record<string, string> = {
-  local: "olliEcode",
-  dev: "olliEcode Dev",
-  beta: "olliEcode Beta",
-  prod: "olliEcode",
+  local: "Code Nexus",
+  dev: "Code Nexus",
+  beta: "Code Nexus",
+  prod: "Code Nexus",
 }
 
 const appIDs: Record<string, string> = {
-  dev: "ai.opencode.desktop.dev",
-  beta: "ai.opencode.desktop.beta",
-  prod: "ai.opencode.desktop",
+  local: "ai.code-nexus.desktop.free",
+  dev: "ai.code-nexus.desktop.free",
+  beta: "ai.code-nexus.desktop.free",
+  prod: "ai.code-nexus.desktop.free",
 }
 
 // Local renderer/server mode keeps the dev application identity. Fallback
 // covers any unexpected CHANNEL value so app.setName never receives undefined.
-export const APP_NAME = app.isPackaged ? (appNames[CHANNEL] ?? "olliEcode") : "olliEcode"
+export const APP_NAME = app.isPackaged ? (appNames[CHANNEL] ?? "Code Nexus") : "Code Nexus"
 
-export const APP_ID = app.isPackaged ? appIDs[CHANNEL] : "ai.opencode.desktop.dev"
+export const APP_ID = app.isPackaged ? (appIDs[CHANNEL] ?? "ai.code-nexus.desktop.free") : "ai.code-nexus.desktop.free"

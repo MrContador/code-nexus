@@ -1,7 +1,7 @@
 import "@/index.css"
-import "@/olliecode-studio.css"
-import { OlliecodeToolbar } from "@/olliecode-toolbar"
-import { OlliecodeThemeProvider } from "@/olliecode-theme-provider"
+import "@/code-nexus-studio.css"
+import { CodeNexusToolbar } from "@/code-nexus-toolbar"
+import { CodeNexusThemeProvider } from "@/code-nexus-theme-provider"
 import { VoiceProvider } from "@/voice/context"
 import { VoiceOverlay } from "@/voice/composer"
 import { DialogProvider } from "@opencode/ui/context/dialog"
@@ -24,12 +24,12 @@ import { TabsProvider } from "@/shell/tabs/tabs"
 import { ErrorPage } from "@/shell/errors/error"
 import { AppRoutes, File, preloadRoute } from "@/shell/routes/routes"
 import { PluginRoot } from "@/runtime/plugin/root"
-import { OlliecodeResetFab, OlliecodeWebsiteFab } from "@/olliecode-reset-fab"
-import { OlliecodeLicenseFab } from "@/olliecode-license-fab"
-import { OlliecodeUpdateFab } from "@/olliecode-update-fab"
-import { OlliecodeVersionBadge } from "@/olliecode-version-badge"
-import { OlliecodeThemeFab } from "@/olliecode-theme-fab"
-import { FREE_EDITION } from "@/olliecode-edition"
+import { CodeNexusResetFab, CodeNexusWebsiteFab } from "@/code-nexus-reset-fab"
+import { CodeNexusLicenseFab } from "@/code-nexus-license-fab"
+import { CodeNexusUpdateFab } from "@/code-nexus-update-fab"
+import { CodeNexusVersionBadge } from "@/code-nexus-version-badge"
+import { CodeNexusThemeFab } from "@/code-nexus-theme-fab"
+import { FREE_EDITION } from "@/code-nexus-edition"
 
 export { preloadRoute }
 
@@ -66,14 +66,14 @@ export function AppBaseProviders(
 ) {
   return (
     <MetaProvider>
-      <Title>olliEcode</Title>
+      <Title>Code Nexus</Title>
       <Font />
       <ThemeProvider
         onThemeApplied={(mode, scheme) => {
           props.onThemeApplied?.(mode, scheme)
         }}
       >
-        <OlliecodeThemeProvider />
+        <CodeNexusThemeProvider />
         <LanguageProvider locale={props.locale} onNativeTranslations={props.onNativeTranslations}>
           <UiI18nBridge>
             <ErrorBoundary
@@ -118,14 +118,14 @@ export function AppInterface(props: {
               {props.children}
               {rootProps.children}
               <VoiceOverlay />
-              <OlliecodeToolbar>
-                {FREE_EDITION ? null : <OlliecodeResetFab />}
-                <OlliecodeWebsiteFab />
-                {FREE_EDITION ? null : <OlliecodeLicenseFab />}
-                <OlliecodeThemeFab />
-                <OlliecodeUpdateFab />
-              </OlliecodeToolbar>
-              <OlliecodeVersionBadge />
+              <CodeNexusToolbar>
+                {FREE_EDITION ? null : <CodeNexusResetFab />}
+                <CodeNexusWebsiteFab />
+                {FREE_EDITION ? null : <CodeNexusLicenseFab />}
+                <CodeNexusThemeFab />
+                <CodeNexusUpdateFab />
+              </CodeNexusToolbar>
+              <CodeNexusVersionBadge />
             </VoiceProvider>
           </CommandProvider>
         </ProjectIconsProvider>

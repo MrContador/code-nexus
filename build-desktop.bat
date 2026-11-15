@@ -1,13 +1,14 @@
 @echo off
-title OlliEcode Builder & Runner
+title Code Nexus Builder & Runner
 cd /d "%~dp0"
 
 echo [1/4] Fechando instancias abertas do app...
-powershell -Command "Stop-Process -Name 'olliEcode Dev' -Force -ErrorAction SilentlyContinue"
+powershell -Command "Stop-Process -Name '*Code Nexus*', '*olliEcode*', '*opencode*' -Force -ErrorAction SilentlyContinue"
 
 echo [2/4] Construindo CLI...
 cd packages\cli
-call bun run build
+set OPENCODE_TARGET=windows-x64
+call bun run build --single
 if %errorlevel% neq 0 (
     echo Erro ao construir o CLI!
     pause
@@ -35,6 +36,6 @@ if %errorlevel% neq 0 (
 echo.
 echo ==========================================
 echo  Build e empacotamento concluidos!
-echo  Executavel gerado em: packages\desktop\dist\win-unpacked\olliEcode Dev.exe
+echo  Executavel gerado em: packages\desktop\dist\win-unpacked\Code Nexus.exe
 echo ==========================================
 pause

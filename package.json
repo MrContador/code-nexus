@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "opencode",
-  "description": "AI-powered development tool",
+  "name": "code-nexus",
+  "description": "Code Nexus - AI-powered development tool",
   "version": "2.2.5",
   "private": true,
   "type": "module",

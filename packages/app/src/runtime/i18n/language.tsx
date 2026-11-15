@@ -15,6 +15,7 @@ import {
 import { Persist, persisted } from "@/runtime/persistence/storage"
 import { Persistence } from "@/runtime/persistence/schema"
 import en from "@/runtime/i18n/en"
+import { CODE_NEXUS_COPY } from "@/code-nexus-copy"
 import { dict } from "@opencode/ui/i18n/en"
 import {
   createDesktopNativeBundle,
@@ -325,7 +326,10 @@ export const { use: useLanguage, provider: LanguageProvider } = createSimpleCont
       key: TranslationKey<Key>,
       params?: Record<string, string | number | boolean>,
     ) => {
-      const template: string | undefined = dictionary()[key]
+      const template: string | undefined =
+        dictionary()[key] ??
+        (en as unknown as Record<string, string>)[key] ??
+        (CODE_NEXUS_COPY as unknown as Record<string, string>)[key]
 
       // A key outside the dictionary translates to nothing, as it did with the package translator.
       return template === undefined ? template : resolveTemplate(template, params)

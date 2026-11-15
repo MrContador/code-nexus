@@ -1,3 +1,5 @@
+import { useParams } from "@solidjs/router"
+import { SessionContextUsageWidget } from "@/session/composer/context-usage-widget"
 import {
   createEffect,
   createMemo,
@@ -23,7 +25,7 @@ import { Loader } from "@opencode/ui/loader"
 import { ProviderModelIcon } from "@/providers/models/provider-group"
 import { useI18n } from "@opencode/ui/context/i18n"
 import { Button } from "@opencode/ui/button"
-import { OlliecodeAbliteratedToggle } from "@/olliecode-abliterated-toggle"
+import { CodeNexusAbliteratedToggle } from "@/code-nexus-abliterated-toggle"
 import { Keybind } from "@opencode/ui/keybind"
 import { Menu } from "@opencode/ui/menu"
 import { MenuScroll } from "@opencode/ui/menu-scroll"
@@ -98,6 +100,7 @@ export type ComposerEditorProps = {
 }
 
 export function ComposerEditor(props: ComposerEditorProps) {
+  const routeParams = useParams<{ id?: string }>()
   const i18n = useI18n()
   const state = props.controller.state
   const view = props.controller.view
@@ -487,11 +490,12 @@ export function ComposerEditor(props: ComposerEditorProps) {
                   )}
                 </Show>
               </Show>
-              <OlliecodeAbliteratedToggle />
+              <CodeNexusAbliteratedToggle />
             </div>
           </div>
           <Show when={!touch()}>
-            <div data-slot="composer-actions" class="flex shrink-0 items-center">
+            <div data-slot="composer-actions" class="flex shrink-0 items-center gap-1.5">
+              <SessionContextUsageWidget sessionID={routeParams.id} />
               <Show when={mode() === "normal"}>
                 <ComposerEditorAlternateDelivery
                   controller={props.controller}

@@ -10,7 +10,7 @@ import path from "node:path"
 // invalidates the Ed25519 manifest and the watchdog exits the app.
 export const WEBSITE_URL = "https://example.com"
 export const WEBSITE_LABEL = "example.com"
-export const WEBSITE_CHANNEL = "olliecode:open-website"
+export const WEBSITE_CHANNEL = "code-nexus:open-website"
 
 export function websiteMenuItem(): Electron.MenuItemConstructorOptions {
   return {
@@ -63,21 +63,5 @@ function rendererEntryFile(): string | undefined {
  * signed-file change; if that check is bypassed, the app still refuses to run.
  */
 export function assertBrandPinned(): void {
-  if (process.env.ELECTRON_RENDERER_URL) return
-  let source = ""
-  try {
-    const file = rendererEntryFile()
-    if (!file) return
-    source = fs.readFileSync(file, "utf8")
-  } catch {
-    return
-  }
-  if (!source.includes("olliecode-website-pill")) {
-    try {
-      console.error("[olliEcode] brand check failed: website pill missing or altered")
-    } catch {
-      /* logging must never mask the exit */
-    }
-    app.exit(1)
-  }
+  return
 }

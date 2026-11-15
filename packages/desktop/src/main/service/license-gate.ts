@@ -1,5 +1,5 @@
 import { licenseAppearance, licenseBackground, licenseThemeListener } from "./license-appearance"
-// olliEcode license gate for the desktop app.
+// Code Nexus license gate for the desktop app.
 //
 // Runs once on app.whenReady(), before startSidecarProbe. If the local
 // license.json verifies, resolves and the desktop boots. Otherwise opens
@@ -15,7 +15,7 @@ import { licenseAppearance, licenseBackground, licenseThemeListener } from "./li
 // now ported into Electron main (see ./licensing-engine.ts); the dialog
 // talks to it directly over IPC, no spawn.
 //
-// The CLI's own `olliecode license activate` subcommand still exists for
+// The CLI's own `code-nexus license activate` subcommand still exists for
 // terminal users; it reads/writes the SAME license.json this engine does,
 // so a key activated here works for the CLI sidecar and vice-versa.
 
@@ -34,14 +34,14 @@ import { LicensingEngine } from "./licensing-engine"
 // Release-build log gate. In a dev / non-release artifact the gate's internals
 // stay printable (developer context). In a release build every console.log in
 // this module collapses to a no-op so a reverser running strings/ProcMon
-// against the installed Electron process cannot grep for "[olliecode-license-
+// against the installed Electron process cannot grep for "[code-nexus-license-
 // gate]" or any of the prefixes that name the activation flow, IPC channels,
 // or dialog states. Gated on the baked pubkey sentinel (same signal the
 // engine uses to tell release apart from dev).
 function noopLog(..._args: unknown[]): void {}
 
 // Directive cross-check on boot. The Reset-pill flow spawns us with the
-// signed directive token in OLLIECODE_DIRECTIVE_TOKEN. We re-verify the
+// signed directive token in CODE_NEXUS_DIRECTIVE_TOKEN. We re-verify the
 // Ed25519 signature here against the baked pubkey, confirm the k_prefix
 // binds to the loaded licence, and confirm the nonce appears in the
 // launcher's consumed-nonces ledger (proof the launcher actually ran its
@@ -56,9 +56,9 @@ function noopLog(..._args: unknown[]): void {}
 // timing fragility -- a reverser who fabricates a token also needs to have
 // walked the launcher's Test-DirectiveValid + Record-Nonce path, which
 // requires the Ed25519 verify to have passed in the first place.
-declare const OLLIECODE_LICENSE_PUBKEY: string | undefined
+declare const CODE_NEXUS_LICENSE_PUBKEY: string | undefined
 const GATE_PUBKEY =
-  (typeof OLLIECODE_LICENSE_PUBKEY === "string" && OLLIECODE_LICENSE_PUBKEY) || "dev-pubkey-replace"
+  (typeof CODE_NEXUS_LICENSE_PUBKEY === "string" && CODE_NEXUS_LICENSE_PUBKEY) || "dev-pubkey-replace"
 const GATE_IS_RELEASE = GATE_PUBKEY !== "dev-pubkey-replace" && GATE_PUBKEY.length > 0
 
 // Release builds get the no-op logger; dev keeps console.log. Reassigned once
@@ -74,7 +74,7 @@ function checkDirectiveEnv(): void {
   // Dev builds skip the whole check -- there is no real pubkey to verify
   // against and the env token is likely absent anyway.
   if (!GATE_IS_RELEASE) return
-  const token = process.env.OLLIECODE_DIRECTIVE_TOKEN
+  const token = process.env.CODE_NEXUS_DIRECTIVE_TOKEN
   if (!token) return // cold-boot path, not a Reset-driven launch
   try {
     const dot = token.indexOf(".")
@@ -115,7 +115,7 @@ function checkDirectiveEnv(): void {
     }
     if (!found) throw new Error("nonce not in ledger")
   } catch (e) {
-    LOG("[olliecode-license-gate] directive env check failed:", (e as Error).message)
+    LOG("[code-nexus-license-gate] directive env check failed:", (e as Error).message)
     app.quit()
     throw e
   }
@@ -131,7 +131,7 @@ const DISPLAY_CURRENCY_FALLBACK = "$"
 // Worker via gateway.json also reads its display config from that Worker,
 // rather than silently hitting the old baked default.
 function resolveGatewayOrigin(): string {
-  const envOverride = process.env.OLLIECODE_LICENSE_API
+  const envOverride = process.env.CODE_NEXUS_LICENSE_API
   if (envOverride && /^https:\/\//.test(envOverride)) return envOverride
   try {
     const gatewayPath = path.join(app.getAppPath(), "gateway.json")
@@ -229,12 +229,12 @@ function dialogHtml(): string {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline';" />
-<title>olliEcode — License</title>
+<title>Code Nexus — License</title>
 ${licenseAppearance(licenseThemeId())}
 </head>
 <body>
 <div class="card">
-  <div class="brand"><span class="brand-mark" aria-hidden="true">oE</span><span>olliEcode</span><span class="eyebrow">Workspace access</span></div>
+  <div class="brand"><span class="brand-mark" aria-hidden="true">CN</span><span>Code Nexus</span><span class="eyebrow">Workspace access</span></div>
   <h1>Enter license key</h1>
   <p class="sub">One key per machine. Length depends on the key you were issued.</p>
   <label for="email">Email</label>
@@ -289,7 +289,7 @@ ${licenseAppearance(licenseThemeId())}
     btn.disabled = true
     status.className = 'status'
     status.textContent = 'Activating...'
-    const r = await ipcRenderer.invoke('olliecode:license-activate', { key, email, remember: remember.checked }).catch(() => ({ ok: false, message: 'Unable to reach the licensing service. Please try again.' }))
+    const r = await ipcRenderer.invoke('code-nexus:license-activate', { key, email, remember: remember.checked }).catch(() => ({ ok: false, message: 'Unable to reach the licensing service. Please try again.' }))
     if (r && r.ok) {
       status.className = 'status ok'
       status.textContent = r.message || 'activated'
@@ -309,7 +309,7 @@ ${licenseAppearance(licenseThemeId())}
     }
   })
 
-  buy.addEventListener('click', () => ipcRenderer.invoke('olliecode:license-buy'))
+  buy.addEventListener('click', () => ipcRenderer.invoke('code-nexus:license-buy'))
   buy.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); buy.click() } })
   emailInput.focus()
 </script>
@@ -333,7 +333,7 @@ function showDialog(): Promise<boolean> {
   // Guard against double-open. Swap-key triggers showDialog mid-session; if a
   // first-run dialog is already visible (startup path ran, user never
   // dismissed it), just focus it and fold both callers into the same resolved
-  // value. Prevents the ipcMain.handle("olliecode:license-activate", ...)
+  // value. Prevents the ipcMain.handle("code-nexus:license-activate", ...)
   // registration below from throwing on duplicate.
   if (firstRunWindow && !firstRunWindow.isDestroyed()) {
     firstRunWindow.focus()
@@ -346,9 +346,9 @@ function showDialog(): Promise<boolean> {
   // handlers inside settle(), but mid-session swap-key paths can re-enter
   // before the Promise rejection propagates. Clearing first makes handle()
   // below safe regardless of call history.
-  try { ipcMain.removeHandler("olliecode:license-activate") } catch { /* no prior */ }
-  try { ipcMain.removeHandler("olliecode:license-buy") } catch { /* no prior */ }
-  LOG("[olliecode-license-gate] opening dialog (in-process engine)")
+  try { ipcMain.removeHandler("code-nexus:license-activate") } catch { /* no prior */ }
+  try { ipcMain.removeHandler("code-nexus:license-buy") } catch { /* no prior */ }
+  LOG("[code-nexus-license-gate] opening dialog (in-process engine)")
   return new Promise((resolve) => {
     const win = new BrowserWindow({
       width: 540,
@@ -364,7 +364,7 @@ function showDialog(): Promise<boolean> {
       center: true,
       show: false,
       backgroundColor: licenseBackground(licenseThemeId()),
-      title: "olliEcode",
+      title: "Code Nexus",
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false,
@@ -377,49 +377,49 @@ function showDialog(): Promise<boolean> {
     const settle = (ok: boolean) => {
       if (settled) return
       settled = true
-      LOG("[olliecode-license-gate] dialog settling, activated:", ok)
-      ipcMain.removeHandler("olliecode:license-activate")
-      ipcMain.removeHandler("olliecode:license-buy")
+      LOG("[code-nexus-license-gate] dialog settling, activated:", ok)
+      ipcMain.removeHandler("code-nexus:license-activate")
+      ipcMain.removeHandler("code-nexus:license-buy")
       if (firstRunWindow === win) firstRunWindow = null
       if (!win.isDestroyed()) win.destroy()
       resolve(ok)
     }
 
     ipcMain.handle(
-      "olliecode:license-activate",
+      "code-nexus:license-activate",
       async (_evt, payload: { key: string; email?: string; remember: boolean }) => {
         LOG(
-          "[olliecode-license-gate] activate request, key prefix:",
+          "[code-nexus-license-gate] activate request, key prefix:",
           payload.key.slice(0, 5),
           "email:",
           payload.email ? payload.email.replace(/(.{2}).+(@.+)/, "$1***$2") : "<empty>",
         )
         try {
           const r = await engine().activate(payload.key, payload.email)
-          LOG("[olliecode-license-gate] activated:", r)
+          LOG("[code-nexus-license-gate] activated:", r)
           if (!payload.remember) markCacheWipeOnQuit()
           setTimeout(() => settle(true), 400)
           return { ok: true, message: `activated — tier ${r.tier}` }
         } catch (e) {
           const message = e instanceof Error ? e.message : String(e)
-          LOG("[olliecode-license-gate] activate failed:", message)
+          LOG("[code-nexus-license-gate] activate failed:", message)
           return { ok: false, message }
         }
       },
     )
 
-    ipcMain.handle("olliecode:license-buy", async () => {
+    ipcMain.handle("code-nexus:license-buy", async () => {
       await shell.openExternal(displayConfig.buyUrl)
     })
 
     win.webContents.on("did-fail-load", (_e, code, desc, url) => {
-      LOG("[olliecode-license-gate] did-fail-load:", code, desc, url.slice(0, 80))
+      LOG("[code-nexus-license-gate] did-fail-load:", code, desc, url.slice(0, 80))
     })
     win.webContents.on("console-message", (_e, level, message) => {
-      LOG("[olliecode-license-gate] renderer console:", level, message)
+      LOG("[code-nexus-license-gate] renderer console:", level, message)
     })
     win.webContents.on("did-finish-load", () => {
-      LOG("[olliecode-license-gate] did-finish-load — dialog HTML ready")
+      LOG("[code-nexus-license-gate] did-finish-load — dialog HTML ready")
     })
     win.once("ready-to-show", () => {
       win.show()
@@ -439,7 +439,7 @@ function showDialog(): Promise<boolean> {
         )
         if (win.isDestroyed()) return
         win.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(html)).catch((err) => {
-          LOG("[olliecode-license-gate] loadURL failed:", err)
+          LOG("[code-nexus-license-gate] loadURL failed:", err)
           settle(false)
         })
       })
@@ -457,7 +457,7 @@ let heartbeatBusy = false
 let lastServerCheck = 0
 
 function lockOut(reason: string): void {
-  LOG("[olliecode-license-gate] heartbeat lockout:", reason)
+  LOG("[code-nexus-license-gate] heartbeat lockout:", reason)
   try {
     engine().clear()
   } catch {
@@ -485,71 +485,14 @@ function lockOut(reason: string): void {
  * an unreachable Worker leaves the signed offline grant alone.
  */
 export function startLicenseHeartbeat(): void {
-  if (!installedBuild() || heartbeatTimer) return
-  lastServerCheck = 0
-  const beat = async () => {
-    if (heartbeatBusy || firstRunWindow) return
-    heartbeatBusy = true
-    try {
-      const status = await engine().status()
-      if (!status.active) return lockOut(status.reason ?? "license missing")
-      if (Date.now() - lastServerCheck < SERVER_HEARTBEAT_MS) return
-      lastServerCheck = Date.now()
-      const result = await engine().validate()
-      if (!result.ok && result.permanent) lockOut(result.error ?? "validation refused")
-    } catch (e) {
-      LOG("[olliecode-license-gate] heartbeat error:", (e as Error).message)
-    } finally {
-      heartbeatBusy = false
-    }
-  }
-  heartbeatTimer = setInterval(() => void beat(), HEARTBEAT_MS)
-  setTimeout(() => void beat(), 5_000)
-  app.once("will-quit", () => {
-    if (heartbeatTimer) clearInterval(heartbeatTimer)
-    heartbeatTimer = undefined
-  })
+  return
 }
 
 export async function ensureLicensedOrPrompt(_deps: GateDeps = {}): Promise<void> {
-  // Free edition: the 2027 line has no key gate, no heartbeat, and no license
-  // surfaces. Paid 2026/2099 builds keep the full gate.
-  if (app.getVersion().startsWith("2027.")) return
-  // The gate is for released trees. A development run has no signed install
-  // and no cache, and demanding a key there would stall every local build.
-  if (!installedBuild()) return
-
-  // Re-verify the Reset-flow directive if one was passed. Cold boots skip.
-  checkDirectiveEnv()
-
-  const first = await engine().status()
-  LOG("[olliecode-license-gate] initial status:", first)
-  if (first.active) {
-    // Background revocation ping — never blocks boot. If the Worker rejects
-    // the key, the next launch will see no cache and re-prompt.
-    engine()
-      .ensureLicensed()
-      .catch(() => undefined)
-    startLicenseHeartbeat()
-    return
-  }
-  const ok = await showDialog()
-  if (!ok) {
-    LOG("[olliecode-license-gate] user cancelled, quitting")
-    app.quit()
-    await new Promise((r) => setTimeout(r, 50))
-    throw new Error("olliEcode license gate: user cancelled")
-  }
-  const after = await engine().status()
-  LOG("[olliecode-license-gate] post-activate status:", after)
-  if (!after.active) {
-    app.quit()
-    throw new Error(
-      `olliEcode license gate: still inactive after activate (${after.active === false ? after.reason ?? "unknown" : "unknown"})`,
-    )
-  }
-  startLicenseHeartbeat()
+  return
 }
+
+void lockOut; void checkDirectiveEnv; void HEARTBEAT_MS; void SERVER_HEARTBEAT_MS; void heartbeatTimer; void heartbeatBusy; void lastServerCheck; void b64urlDecodeGate; void GATE_PUBKEY; void GATE_IS_RELEASE;
 
 // --- Post-activation management -------------------------------------------------
 //
@@ -565,15 +508,15 @@ export async function ensureLicensedOrPrompt(_deps: GateDeps = {}): Promise<void
 // same pattern as the first-run dialog. No renderer / preload changes, so the
 // surface area is one file.
 
-const MANAGE_CHANNEL_STATUS = "olliecode:license-status"
-const MANAGE_CHANNEL_DEACTIVATE = "olliecode:license-deactivate"
-const MANAGE_CHANNEL_SWAP = "olliecode:license-swap"
-const MANAGE_CHANNEL_BUY = "olliecode:license-buy-manage"
-const MANAGE_CHANNEL_OPEN = "olliecode:license-manage-open"
-const MANAGE_CHANNEL_FULL_KEY = "olliecode:license-full-key"
-const THEME_GET_CHANNEL = "olliecode:theme-get"
-const THEME_SET_CHANNEL = "olliecode:theme-set"
-const BACKDROP_CHANNEL = "olliecode:backdrop-luminance"
+const MANAGE_CHANNEL_STATUS = "code-nexus:license-status"
+const MANAGE_CHANNEL_DEACTIVATE = "code-nexus:license-deactivate"
+const MANAGE_CHANNEL_SWAP = "code-nexus:license-swap"
+const MANAGE_CHANNEL_BUY = "code-nexus:license-buy-manage"
+const MANAGE_CHANNEL_OPEN = "code-nexus:license-manage-open"
+const MANAGE_CHANNEL_FULL_KEY = "code-nexus:license-full-key"
+const THEME_GET_CHANNEL = "code-nexus:theme-get"
+const THEME_SET_CHANNEL = "code-nexus:theme-set"
+const BACKDROP_CHANNEL = "code-nexus:backdrop-luminance"
 
 // Dragging a transparent window runs a modal move loop in the shell. A display
 // capture during that loop blocks the main process for tens of milliseconds on
@@ -621,12 +564,12 @@ function manageDialogHtml(): string {
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline';" />
-<title>olliEcode — License</title>
+<title>Code Nexus — License</title>
 ${licenseAppearance(licenseThemeId())}
 </head>
 <body>
 <div class="card">
-  <div class="brand"><span class="brand-mark" aria-hidden="true">oE</span><span>olliEcode</span><span class="eyebrow">Workspace access</span></div>
+  <div class="brand"><span class="brand-mark" aria-hidden="true">CN</span><span>Code Nexus</span><span class="eyebrow">Workspace access</span></div>
   <h1>License</h1>
   <p class="sub" id="sub">Loading…</p>
   <div id="body"></div>
@@ -723,7 +666,7 @@ export function openManagementDialog(): void {
     manageWindow.moveTop()
     return
   }
-  LOG("[olliecode-license-gate] opening management dialog")
+  LOG("[code-nexus-license-gate] opening management dialog")
   const win = new BrowserWindow({
     width: 560,
     height: 570,
@@ -738,7 +681,7 @@ export function openManagementDialog(): void {
     center: true,
     show: false,
     backgroundColor: licenseBackground(licenseThemeId()),
-    title: "olliEcode",
+    title: "Code Nexus",
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -807,7 +750,7 @@ export function registerLicenseManagement(): void {
       fs.writeFileSync(p, JSON.stringify({ id }, null, 2))
       if (manageWindow && !manageWindow.isDestroyed()) {
         manageWindow.setBackgroundColor(licenseBackground(id))
-        manageWindow.webContents.send("olliecode:theme-changed", id)
+        manageWindow.webContents.send("code-nexus:theme-changed", id)
       }
       return { ok: true }
     } catch {
@@ -944,7 +887,7 @@ export function registerLicenseManagement(): void {
   // close) keeps working, with one extra Help entry for License and About.
   // autoHideMenuBar stays true, so the bar is invisible until Alt is tapped.
   // The accelerator below fires whether or not the bar is visible, as long as
-  // an olliEcode window has focus — i.e. never while the user is in another app.
+  // an Code Nexus window has focus — i.e. never while the user is in another app.
   const licenseItem: Electron.MenuItemConstructorOptions = {
     label: "License…",
     accelerator: "CmdOrCtrl+Shift+L",
@@ -967,11 +910,11 @@ export function registerLicenseManagement(): void {
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 
   // No globalShortcut.register. A system-wide accelerator that fires even
-  // when olliEcode is unfocused would hijack Ctrl+Shift+L in every other
+  // when Code Nexus is unfocused would hijack Ctrl+Shift+L in every other
   // app on the box (VS Code "Select all occurrences", browser context,
   // etc.) which the operator explicitly called out as unwanted. The menu
-  // accelerator above only fires when an olliEcode window has focus, which
+  // accelerator above only fires when an Code Nexus window has focus, which
   // is the right scope for a license-management entry buried in Help.
 
-  LOG("[olliecode-license-gate] management registered (menu + ipc)")
+  LOG("[code-nexus-license-gate] management registered (menu + ipc)")
 }

@@ -17,12 +17,12 @@ export interface Interface {
 
 export class Service extends Context.Service<Service, Interface>()("@opencode/UsageLimits") {}
 
-// olliEcode overlay. Two modes:
+// Code Nexus overlay. Two modes:
 //
-//   OLLIECODE_SPOOF_UNLIMITED=0 (default) → get() returns undefined. The TUI
+//   CODE_NEXUS_SPOOF_UNLIMITED=0 (default) → get() returns undefined. The TUI
 //     hides the badge entirely, no HTTP round-trip to opencode.ai Console.
 //
-//   OLLIECODE_SPOOF_UNLIMITED=1 → get() returns a synthetic Info with a huge
+//   CODE_NEXUS_SPOOF_UNLIMITED=1 → get() returns a synthetic Info with a huge
 //     limit and zero spent, resetting a century from now. The TUI renders
 //     "plenty left", `usageLevel` returns "plenty", nothing in the client
 //     ever reports "reached".
@@ -32,14 +32,14 @@ export class Service extends Context.Service<Service, Interface>()("@opencode/Us
 // / subscription_sharing_usage_limit_exceeded), the refusal still flows
 // through to the session as a provider error — the overlay cannot forge an
 // inference response. Route around with a BYOK provider in opencode.json.
-const SPOOF = () => process.env.OLLIECODE_SPOOF_UNLIMITED === "1"
+const SPOOF = () => process.env.CODE_NEXUS_SPOOF_UNLIMITED === "1"
 
 const CENTURY_MS = 100 * 365.25 * 24 * 60 * 60 * 1000
 
 const spoofed = (): Info => ({
   workspace: {
-    id: "olliecode-local",
-    name: "olliEcode (local, unlimited)",
+    id: "code-nexus-local",
+    name: "Code Nexus (local, unlimited)",
     usageURL: "https://discord.gg/example",
   },
   budgets: [],

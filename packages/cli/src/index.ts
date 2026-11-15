@@ -1,10 +1,10 @@
 #!/usr/bin/env bun
 
-// olliEcode: MUST be the very first import so our globalThis.fetch override
+// Code Nexus: MUST be the very first import so our globalThis.fetch override
 // runs before any effect/http FetchHttpClient layer captures a reference.
 // Lives in @opencode/util (which the CLI already depends on) and is
 // self-contained (no @opencode/core import) so the bundle resolves clean.
-import "@opencode/util/olliecode-bootstrap"
+import "@opencode/util/code-nexus-bootstrap"
 import { ensurePluginRuntime } from "@opencode/plugin/runtime"
 import { NodeRuntime, NodeServices } from "@effect/platform-node"
 import { Cause, Effect } from "effect"

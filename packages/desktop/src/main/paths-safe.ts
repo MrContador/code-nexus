@@ -3,15 +3,20 @@ import { homedir } from "node:os"
 import path from "node:path"
 
 /** App ID used for custom userData paths in tests. */
-export const APP_ID = "ai.opencode.desktop"
+export const APP_ID = "ai.code-nexus.desktop.free"
 
 /**
  * Safely resolves `app.getPath(name)` with platform-appropriate fallbacks.
  * Electron's `app.getPath` can return empty string on Linux if XDG directories
  * aren't set, or before `app.whenReady()` in some edge cases.
  */
-export function getAppPath(name: Parameters<typeof app.getPath>[0]): string {  // Always returns a valid string
-  const result = app.getPath(name) as string | undefined
+export function getAppPath(name: Parameters<typeof app.getPath>[0]): string {
+  let result: string | undefined
+  try {
+    if (name) {
+      result = app.getPath(name) as string | undefined
+    }
+  } catch {}
 
   if (result && typeof result === "string" && result.length > 0) {
     return result
@@ -71,7 +76,7 @@ export function getAppPath(name: Parameters<typeof app.getPath>[0]): string {  /
     }
     default: {
       // For any other path type, fall back to userData
-      return path.join(getAppPath("userData"), name)
+      return name ? path.join(getAppPath("userData"), name) : getAppPath("userData")
     }
   }
 }

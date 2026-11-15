@@ -1,13 +1,13 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
-  "name": "@opencode/cli",
+  "name": "@code-nexus/cli",
   "version": "2.2.5",
   "type": "module",
   "license": "MIT",
   "bin": {
-    "opencode": "./bin/opencode.cjs",
-    "opencode2": "./bin/opencode2.cjs",
-    "olliecode": "./bin/olliecode.cjs"
+    "code-nexus": "./bin/code-nexus.cjs",
+    "code-nexus2": "./bin/code-nexus2.cjs",
+    "cnx": "./bin/cnx.cjs"
   },
   "files": [
     "bin"

@@ -1,4 +1,6 @@
 import { app } from "electron"
+import { copyFileSync, existsSync } from "node:fs"
+import nodePath from "node:path"
 import { createServer } from "node:net"
 import type { Endpoint } from "@opencode/client/service"
 import { Context, Effect, FileSystem, Layer, Option, Path, Schema } from "effect"
@@ -90,7 +92,7 @@ const ensure = Effect.fn("BackgroundService.ensure")(function* (mode: Background
       // Pass the same state root so the child writes where this process probes.
       ...(setup.stateHome === undefined ? {} : { env: { XDG_STATE_HOME: setup.stateHome } }),
       // A fixed port makes a second contender fail to bind and back off; port 0 never collides, so two
-      // services could boot against the same database. local/dev (olliEcode) gets its own port and
+      // services could boot against the same database. local/dev (Code Nexus) gets its own port and
       // state root so the upstream OpenCode desktop can run at the same time.
       command: [
         ...setup.cli.command,
@@ -134,7 +136,7 @@ const prepare = Effect.fn("BackgroundService.prepare")(function* (mode: Backgrou
   const path = yield* Path.Path
   const desktopCli = yield* DesktopCli.Service
   const isolated = !app.isPackaged && process.env.OPENCODE_DESKTOP_ISOLATED_SERVER === "1"
-  // local/dev is the olliEcode channel. The upstream OpenCode desktop uses latest/prod and the
+  // local/dev is the Code Nexus channel. The upstream OpenCode desktop uses latest/prod and the
   // shared XDG state registration; without a dedicated state root and port the two apps replace
   // each other's background service every few seconds and both renderers time out.
   //
@@ -149,14 +151,42 @@ const prepare = Effect.fn("BackgroundService.prepare")(function* (mode: Backgrou
   if (stateHome !== undefined) process.env.XDG_STATE_HOME = stateHome
   const client = yield* Effect.promise(() => import("@opencode/client/service"))
 
-  // The CLI names its registration file by channel. local writes
-  // service-local.json so it can run beside upstream OpenCode; every other
-  // channel writes service.json. Reading the wrong name leaves ensure() waiting
-  // on a stale registration from a previous build until it times out.
-  const file =
-    stateHome !== undefined
-      ? path.join(stateHome, "opencode", CHANNEL === "local" ? "service-local.json" : "service.json")
-      : undefined
+  // The CLI names its registration file by channel.
+  // In addition to local (service-local.json) and standard channels (service.json),
+  // git-derived versions like 0.0.0-main-* write service-main.json.
+  // Check the CLI's version prefix and existing files to guarantee exact discovery.
+  const channelFromVersion = cli.version.match(/^0\.0\.0-([a-zA-Z0-9._-]+)-/)?.[1]
+  const serviceFilename = (() => {
+    if (channelFromVersion && !["latest", "dev", "beta", "next"].includes(channelFromVersion)) {
+      return `service-${channelFromVersion.replace(/[^a-zA-Z0-9._-]/g, "-")}.json`
+    }
+    if (CHANNEL === "local") return "service-local.json"
+    return "service.json"
+  })()
+
+  let file: string | undefined = undefined
+  if (stateHome !== undefined) {
+    const opencodeDir = path.join(stateHome, "opencode")
+    const candidates = [
+      path.join(opencodeDir, serviceFilename),
+      path.join(opencodeDir, "service-main.json"),
+      path.join(opencodeDir, "service-local.json"),
+      path.join(opencodeDir, "service.json"),
+    ]
+    file = candidates[0]
+    for (const c of candidates) {
+      if (existsSync(c)) {
+        file = c
+        // Mirror to the other candidate filenames so any tool/contender finds it
+        for (const target of candidates) {
+          if (target !== c) {
+            try { copyFileSync(c, target) } catch {}
+          }
+        }
+        break
+      }
+    }
+  }
 
   const port = dedicated ? yield* Effect.promise(chooseServicePort) : undefined
   if (dedicated && port !== PREFERRED_SERVICE_PORT)
@@ -187,6 +217,16 @@ const adopt = Effect.fn("BackgroundService.adopt")(function* (
     ),
     Effect.orElseSucceed(() => undefined),
   )
+
+  if (setup.file && existsSync(setup.file)) {
+    const dir = nodePath.dirname(setup.file)
+    const targets = ["service-local.json", "service.json", "service-main.json"].map((f) => nodePath.join(dir, f))
+    for (const t of targets) {
+      if (t !== setup.file) {
+        try { copyFileSync(setup.file, t) } catch {}
+      }
+    }
+  }
 
   yield* Effect.logInfo("v2 CLI background service ready", {
     version: setup.version,

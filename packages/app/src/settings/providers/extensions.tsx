@@ -18,6 +18,7 @@ import { ExternalLink } from "@/runtime/platform/external-link"
 import { usePlatform } from "@/runtime/platform/platform"
 import { SettingsList } from "@/settings/list"
 import { createExtensionLoad, ExtensionLoadFailed } from "@/settings/extension-load"
+import { SkillHubManager } from "./skill-hub"
 import type { SettingsView } from "@/settings/surface"
 import "@/settings/settings.css"
 import "@/shell/search-list.css"
@@ -222,28 +223,7 @@ export const SettingsExtensions: Component<{
           </Tabs.Content>
 
           <Tabs.Content value="skills">
-            <div class="settings-section">
-              <div class="flex items-center justify-between">
-                <span class="settings-extension-heading text-13-medium">
-                  {language.t("settings.extensions.availableAll")}
-                </span>
-                <ExternalLink class="settings-extension-link text-13-regular" href="https://opencode.ai/docs/skills">
-                  {language.t("settings.extensions.addSkills")}
-                </ExternalLink>
-              </div>
-              <SettingsList variant="catalog">
-                <For each={skills()}>
-                  {(skill) => (
-                    <div class="settings-extension-row">
-                      <div class="settings-extension-lead">
-                        <Icon name="post-skill" class="text-v2-icon-icon-muted shrink-0" />
-                        <span class="settings-extension-name truncate">{skill.name}</span>
-                      </div>
-                    </div>
-                  )}
-                </For>
-              </SettingsList>
-            </div>
+            <SkillHubManager installedSkills={skills()} />
           </Tabs.Content>
         </Tabs>
       </div>

@@ -33,6 +33,7 @@ export interface DialogProps extends ParentProps {
 export interface DialogHeaderProps extends ParentProps {
   closeLabel?: string
   hideClose?: boolean
+  class?: ComponentProps<"div">["class"]
 }
 
 export interface DialogTitleGroupProps {
@@ -40,8 +41,12 @@ export interface DialogTitleGroupProps {
   description?: JSXElement
 }
 
-export function DialogFooter(props: ParentProps) {
-  return <div data-slot="dialog-footer">{props.children}</div>
+export function DialogFooter(props: ParentProps & { class?: ComponentProps<"div">["class"] }) {
+  return (
+    <div data-slot="dialog-footer" class={props.class}>
+      {props.children}
+    </div>
+  )
 }
 
 export function DialogBody(props: ParentProps & { class?: ComponentProps<"div">["class"] }) {
@@ -72,11 +77,11 @@ export function DialogTitleGroup(props: DialogTitleGroupProps) {
 
 export function DialogHeader(props: DialogHeaderProps) {
   const i18n = useI18n()
-  const [local] = splitProps(props, ["closeLabel", "hideClose", "children"])
+  const [local] = splitProps(props, ["closeLabel", "hideClose", "class", "children"])
   const hideClose = () => local.hideClose === true
 
   return (
-    <div data-slot="dialog-header" data-hide-close={hideClose() ? "" : undefined}>
+    <div data-slot="dialog-header" class={local.class} data-hide-close={hideClose() ? "" : undefined}>
       {local.children}
       <Show when={!hideClose()}>
         <CloseButton data-slot="dialog-close-button" aria-label={local.closeLabel ?? i18n.t("ui.common.close")}>

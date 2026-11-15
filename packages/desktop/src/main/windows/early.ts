@@ -73,7 +73,7 @@ const displays = {
   matching: (bounds: Electron.Rectangle) => screen.getDisplayMatching(bounds).bounds,
 }
 
-// olliEcode splash sentinel. The WPF splash (scripts/splash.ps1) previously
+// Code Nexus splash sentinel. The WPF splash (scripts/splash.ps1) previously
 // polled `Get-Process -Name electron` for a window-title heuristic that drifted
 // every time the first-paint title changed, leaving the splash stuck on screen
 // until its 90s deadline. Writing a flag file the moment the first window shows
@@ -90,7 +90,7 @@ const displays = {
 // shared across every launch; the splash clears a stale one older than ~60s
 // at startup so a previous Electron's write can't false-close the current
 // splash.
-const SPLASH_READY_FLAG = path.join(os.tmpdir(), "olliecode-splash-done.flag")
+const SPLASH_READY_FLAG = path.join(os.tmpdir(), "code-nexus-splash-done.flag")
 function writeSplashReadyFlag() {
   try {
     const version = app.isReady() ? app.getVersion() : "unknown"
@@ -129,7 +129,7 @@ export function createEarlyWindow() {
     height: state.height,
     show: !deferReveal,
     autoHideMenuBar: true,
-    title: "olliEcode",
+    title: "Code Nexus",
     icon: path.join(icons, `icon.${process.platform === "win32" ? "ico" : "png"}`),
     // The first window is adopted by the full window manager. Transparency
     // must be enabled here at construction; it cannot be added on adoption.

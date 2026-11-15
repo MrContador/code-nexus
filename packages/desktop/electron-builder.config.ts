@@ -41,9 +41,9 @@ function resolveChannel() {
 }
 
 const APP_IDS = {
-  dev: "ai.opencode.desktop.dev",
-  beta: "ai.opencode.desktop.beta",
-  prod: "ai.opencode.desktop",
+  dev: "ai.code-nexus.desktop.free",
+  beta: "ai.code-nexus.desktop.free",
+  prod: "ai.code-nexus.desktop.free",
 } as const
 
 // libappimage (used by AppImageLauncher) resolves the .desktop entry inside an
@@ -173,8 +173,8 @@ const getBase = (appId: string): Configuration => {
       target: ["dmg", "zip"],
     },
     protocols: {
-      name: "OpenCode",
-      schemes: ["opencode"],
+      name: "Code Nexus",
+      schemes: ["codenexus", "opencode"],
     },
     win: {
       icon: `resources/icons/icon.ico`,
@@ -218,7 +218,7 @@ export function getConfig() {
       return {
         ...base,
         appId,
-        productName: "olliEcode Dev",
+        productName: "Code Nexus",
         publish: {
           provider: "generic",
           url: "https://opencode.ai/update/api/dev/desktop/opencode/",
@@ -236,7 +236,7 @@ export function getConfig() {
       return {
         ...base,
         appId,
-        productName: "olliEcode Beta",
+        productName: "Code Nexus Beta",
         protocols: { name: "OpenCode Beta", schemes: ["opencode"] },
         publish: {
           provider: "generic",
@@ -255,7 +255,7 @@ export function getConfig() {
       return {
         ...base,
         appId,
-        productName: "olliEcode",
+        productName: "Code Nexus",
         protocols: { name: "OpenCode", schemes: ["opencode"] },
         // An Icon Composer package compiles to Assets.car, which macOS 26 and later draw the app icon from
         // (Dock, Finder, system dialogs and the system icon styles). Older macOS keeps using the ICNS.

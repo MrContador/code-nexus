@@ -1,16 +1,17 @@
 import type { LocationRef, UsageLimitsInfo } from "@opencode/client/promise"
 import { Button } from "@opencode/ui/button"
 import { useDialog } from "@opencode/ui/context/dialog"
-import { Dialog, DialogBody, DialogFooter, DialogHeader, DialogTitleGroup } from "@opencode/ui/dialog"
+import { Dialog, DialogBody, DialogFooter, DialogHeader, DialogTitle, DialogTitleGroup } from "@opencode/ui/dialog"
 import { Loader } from "@opencode/ui/loader"
 import { createStore } from "solid-js/store"
-import { For, type JSX, Match, onMount, Show, Switch } from "solid-js"
+import { createSignal, For, type JSX, lazy, Match, onMount, Show, Switch } from "solid-js"
 import { useLanguage } from "@/runtime/i18n/language"
 import { usePlatform } from "@/runtime/platform/platform"
 import { useData, useServer } from "@/runtime/server/current"
 import { authTokenFromCredentials } from "@/runtime/server/api"
 import { useUsageFormat } from "./format"
-import { FREE_EDITION } from "@/olliecode-edition"
+import { FREE_EDITION } from "@/code-nexus-edition"
+const UsageHistoryDashboard = lazy(() => import("./history").then((m) => ({ default: m.UsageHistoryDashboard })))
 import {
   type BudgetLabel,
   type BudgetNote,
@@ -23,7 +24,7 @@ import {
 } from "./limits"
 import "./dialog.css"
 
-/** The Usage dialog: the location's olliEcode Go allowance and Console budgets, refreshed when it opens. */
+/** The Usage dialog: Code Nexus token usage statistics and workspace allowance/budgets. */
 export function DialogUsage(props: {
   location: LocationRef
   /** The model in use, so a per-model budget shows this model's counter. */
@@ -34,6 +35,7 @@ export function DialogUsage(props: {
 }) {
   const data = useData()
   const language = useLanguage()
+  const [activeTab, setActiveTab] = createSignal<"history" | "limits">("history")
   const [state, setState] = createStore({ loading: true, failed: false })
   const load = () => {
     setState({ loading: true, failed: false })
@@ -47,53 +49,96 @@ export function DialogUsage(props: {
   const info = () => data.location.usage.limits(props.location)
 
   return (
-    <Switch>
-      <Match when={info()}>
-        {(value) => (
-          <UsageDialogContent
-            info={value()}
-            location={props.location}
-            model={props.model}
-            credits={props.credits}
-            onSwitchModel={props.onSwitchModel}
-          />
-        )}
-      </Match>
-      <Match when={true}>
-        <UsageFrame>
-          <div class="flex min-h-[120px] items-center justify-center px-4 pb-4">
-            <Switch>
-              <Match when={state.loading}>
-                <Loader />
-              </Match>
-              <Match when={state.failed}>
-                <div class="flex flex-col items-center gap-3">
-                  <span class="text-[13px] leading-text-compact font-[440] tracking-[-0.04px] text-v2-text-text-muted">
-                    {language.t("usage.error")}
-                  </span>
-                  <Button variant="neutral" onClick={load}>
-                    {language.t("usage.retry")}
-                  </Button>
-                </div>
-              </Match>
-              <Match when={true}>
-                <Panel gap={8}>
-                  <Item>
-                    <Line class="font-[530] text-v2-text-text-base">{language.t("usage.signedOut.title")}</Line>
-                    <Line class="text-v2-text-text-muted">{language.t("usage.signedOut.body")}</Line>
-                  </Item>
-                </Panel>
-              </Match>
-            </Switch>
+    <Dialog containerClass="!w-[min(calc(100vw_-_32px),1040px)] !h-[min(calc(100vh_-_48px),860px)] !max-h-[calc(100vh_-_48px)] !flex !flex-col !overflow-hidden !rounded-2xl">
+      <DialogHeader class="!py-3.5 !px-6 border-b border-v2-border-border-base shrink-0 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <DialogTitle class="text-base font-bold text-v2-text-text-base">
+            {activeTab() === "history" ? "Histórico de uso" : (language.t("usage.title") ?? "Limites de uso")}
+          </DialogTitle>
+          <div class="inline-flex rounded-lg bg-v2-background-bg-layer-02 p-0.5 border border-v2-border-border-base text-xs">
+            <button
+              type="button"
+              onClick={() => setActiveTab("history")}
+              class={`px-3 py-1 rounded-md font-medium transition-colors ${
+                activeTab() === "history"
+                  ? "bg-v2-background-bg-inverse text-v2-text-text-inverse shadow-xs"
+                  : "text-v2-text-text-muted hover:text-v2-text-text-base"
+              }`}
+            >
+              Histórico de uso
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("limits")}
+              class={`px-3 py-1 rounded-md font-medium transition-colors ${
+                activeTab() === "limits"
+                  ? "bg-v2-background-bg-inverse text-v2-text-text-inverse shadow-xs"
+                  : "text-v2-text-text-muted hover:text-v2-text-text-base"
+              }`}
+            >
+              Limites e saldo
+            </button>
           </div>
-        </UsageFrame>
-      </Match>
-    </Switch>
+        </div>
+      </DialogHeader>
+
+      <DialogBody class="min-h-0 flex-1 overflow-y-auto !p-6 flex flex-col gap-6 [scrollbar-width:thin] [scrollbar-color:var(--v2-border-border-base)_transparent]">
+        <Show when={activeTab() === "history"}>
+          <UsageHistoryDashboard showHeader={false} />
+        </Show>
+        <Show when={activeTab() === "limits"}>
+          <Switch>
+            <Match when={info()}>
+              {(value) => (
+                <div class="max-w-lg mx-auto w-full flex flex-col gap-4">
+                  <UsageLimitsBody
+                    info={value()}
+                    location={props.location}
+                    model={props.model}
+                    credits={props.credits}
+                    onSwitchModel={props.onSwitchModel}
+                  />
+                </div>
+              )}
+            </Match>
+            <Match when={true}>
+              <div class="max-w-lg mx-auto w-full flex flex-col gap-4">
+                <Switch>
+                  <Match when={state.loading}>
+                    <div class="flex min-h-[120px] items-center justify-center">
+                      <Loader />
+                    </div>
+                  </Match>
+                  <Match when={state.failed}>
+                    <div class="flex flex-col items-center gap-3">
+                      <span class="text-[13px] leading-text-compact font-[440] tracking-[-0.04px] text-v2-text-text-muted">
+                        {language.t("usage.error")}
+                      </span>
+                      <Button variant="neutral" onClick={load}>
+                        {language.t("usage.retry")}
+                      </Button>
+                    </div>
+                  </Match>
+                  <Match when={true}>
+                    <Panel gap={8}>
+                      <Item>
+                        <Line class="font-[530] text-v2-text-text-base">{language.t("usage.signedOut.title")}</Line>
+                        <Line class="text-v2-text-text-muted">{language.t("usage.signedOut.body")}</Line>
+                      </Item>
+                    </Panel>
+                  </Match>
+                </Switch>
+              </div>
+            </Match>
+          </Switch>
+        </Show>
+      </DialogBody>
+    </Dialog>
   )
 }
 
-/** The dialog for usage limits already loaded. */
-export function UsageDialogContent(props: {
+/** The inner limits component for usage limits already loaded. */
+export function UsageLimitsBody(props: {
   info: UsageLimitsInfo
   location?: LocationRef
   model?: CurrentModel
@@ -101,7 +146,6 @@ export function UsageDialogContent(props: {
   onSwitchModel?: () => void
 }) {
   const language = useLanguage()
-  const platform = usePlatform()
   const dialog = useDialog()
   const format = useUsageFormat()
   const view = () => usageView(props.info, { model: props.model, credits: props.credits })
@@ -161,13 +205,6 @@ export function UsageDialogContent(props: {
       return language.t(value.shared ? "usage.note.pausedByWorkspace" : "usage.note.pausedByBudget")
     return language.t("usage.note.currentModel", { model: value.name })
   }
-  const footer = () => {
-    const value = view().footer
-    if (value.kind === "credits-only") return language.t("usage.footer.creditsOnly", { workspace: workspace() })
-    return language.t(value.kind === "budgets-reset" ? "usage.footer.budgetsReset" : "usage.footer.resets", {
-      time: format.time(value.resetsAt),
-    })
-  }
   const callout = (value: Callout) => {
     if (value.kind === "credits")
       return {
@@ -215,22 +252,7 @@ export function UsageDialogContent(props: {
   }
 
   return (
-    <UsageFrame
-      footer={
-        <>
-          <span class="flex h-7 min-w-0 flex-1 items-center">
-            <Line class="text-v2-text-text-faint">{footer()}</Line>
-          </span>
-          <Button
-            variant="ghost"
-            class="text-v2-text-text-muted!"
-            onClick={() => platform.openExternal(props.info.workspace.usageURL)}
-          >
-            {language.t("usage.footer.details")}
-          </Button>
-        </>
-      }
-    >
+    <>
       <Show when={view().callout}>
         {(value) => (
           <div data-slot="usage-callout" class="flex items-stretch gap-0.5 px-4">
@@ -332,6 +354,59 @@ export function UsageDialogContent(props: {
           </Panel>
         </Show>
       </Section>
+    </>
+  )
+}
+
+/** The dialog for usage limits already loaded (standalone frame). */
+export function UsageDialogContent(props: {
+  info: UsageLimitsInfo
+  location?: LocationRef
+  model?: CurrentModel
+  credits?: boolean
+  onSwitchModel?: () => void
+}) {
+  const language = useLanguage()
+  const platform = usePlatform()
+  const format = useUsageFormat()
+  const view = () => usageView(props.info, { model: props.model, credits: props.credits })
+  const workspace = () => view().workspace ?? language.t("usage.workspace.fallback")
+  const footer = () => {
+    const value = view().footer
+    if (value.kind === "credits-only") return language.t("usage.footer.creditsOnly", { workspace: workspace() })
+    return language.t(value.kind === "budgets-reset" ? "usage.footer.budgetsReset" : "usage.footer.resets", {
+      time: format.time(value.resetsAt),
+    })
+  }
+
+  const footerAction = () =>
+    view().manage ? (
+      <Button
+        variant="ghost"
+        onClick={() => {
+          platform.openExternal("https://opencode.ai/workspaces")
+        }}
+      >
+        {language.t("usage.manage")}
+      </Button>
+    ) : (
+      <>
+        <span class="flex h-7 min-w-0 flex-1 items-center">
+          <Line class="text-v2-text-text-faint">{footer()}</Line>
+        </span>
+        <Button
+          variant="ghost"
+          class="text-v2-text-text-muted!"
+          onClick={() => platform.openExternal(props.info.workspace.usageURL)}
+        >
+          {language.t("usage.footer.details")}
+        </Button>
+      </>
+    )
+
+  return (
+    <UsageFrame footer={footerAction()}>
+      <UsageLimitsBody {...props} />
     </UsageFrame>
   )
 }
@@ -349,12 +424,12 @@ function UsageFrame(props: { children: JSX.Element; footer?: JSX.Element }) {
       const conn = server.conn
       if (!("http" in conn) || !conn.http?.url) return
       // ?mode=fast triggers the signed-directive gated launcher path in
-      // olliecode-reset.ts, which spawns shortcuts/olliEcode-Fresh-Desktop
+      // code-nexus-reset.ts, which spawns shortcuts/code-nexus-Fresh-Desktop
       // (closes the backend + Electron window, rotates egress, relaunches).
       // Without the mode param the handler only zeroes DB counters locally,
       // and the pill does nothing visible. fresh.ps1 pins any pill-initiated
       // run to the deep ritual regardless of fast/fresh.
-      const url = new URL("/_olliecode/reset-limits?mode=fast", conn.http.url)
+      const url = new URL("/_code-nexus/reset-limits?mode=fast", conn.http.url)
       const headers: Record<string, string> = { "content-type": "application/json" }
       if (conn.http.password)
         headers.authorization = `Basic ${authTokenFromCredentials({ password: conn.http.password })}`

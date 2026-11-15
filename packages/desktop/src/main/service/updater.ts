@@ -1,4 +1,4 @@
-// olliEcode in-app auto-updater.
+// Code Nexus in-app auto-updater.
 //
 // Polls the license Worker for a signed update offer, downloads the Inno
 // Setup installer to %TEMP%, verifies its sha256, and surfaces an in-app
@@ -71,7 +71,7 @@ let initialTimer: NodeJS.Timeout | undefined
 // updater has no cross-module coupling beyond LicensingEngine for the
 // license cache read — one less bundler surprise to debug.
 function resolveGateway(): string {
-  const env = process.env.OLLIECODE_LICENSE_API
+  const env = process.env.CODE_NEXUS_LICENSE_API
   if (env && /^https:\/\//.test(env)) return env.replace(/\/$/, "")
   try {
     const gatewayPath = path.join(app.getAppPath(), GATEWAY_FILENAME)
@@ -183,7 +183,7 @@ async function fetchLatest(engine: LicensingEngine): Promise<UpdateMeta | undefi
 }
 
 async function downloadVerify(meta: UpdateMeta): Promise<string | undefined> {
-  const dir = path.join(os.tmpdir(), "olliecode-update")
+  const dir = path.join(os.tmpdir(), "code-nexus-update")
   try {
     fs.mkdirSync(dir, { recursive: true })
   } catch {
@@ -192,7 +192,7 @@ async function downloadVerify(meta: UpdateMeta): Promise<string | undefined> {
   // Fresh filename per version so a failed previous download doesn't
   // leave a stale file that passes the sha check later for the wrong
   // version string.
-  const dest = path.join(dir, `olliEcode-Setup-${meta.version.replace(/[^A-Za-z0-9._-]/g, "_")}.exe`)
+  const dest = path.join(dir, `Code Nexus-Setup-${meta.version.replace(/[^A-Za-z0-9._-]/g, "_")}.exe`)
 
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS)
@@ -232,7 +232,7 @@ function notifyRenderer(meta: UpdateMeta): void {
       // the pill tooltip and the confirm dialog, leaking the internal
       // changelog ("DB wipe moved into the sidecar" etc). Dropped at the
       // source now, defence-in-depth with the preload scrub.
-      win.webContents.send("olliecode:update-ready", { version: meta.version })
+      win.webContents.send("code-nexus:update-ready", { version: meta.version })
     } catch {
       /* best-effort */
     }
@@ -262,10 +262,10 @@ async function tryUpdateCheck(engine: LicensingEngine): Promise<void> {
 export function registerUpdater(): void {
   // Guard against double-registration — hot-reload / re-entrant boots.
   try {
-    ipcMain.removeHandler("olliecode:update-install")
-    ipcMain.removeHandler("olliecode:update-status")
-    ipcMain.removeHandler("olliecode:update-confirm")
-    ipcMain.removeHandler("olliecode:app-version")
+    ipcMain.removeHandler("code-nexus:update-install")
+    ipcMain.removeHandler("code-nexus:update-status")
+    ipcMain.removeHandler("code-nexus:update-confirm")
+    ipcMain.removeHandler("code-nexus:app-version")
   } catch {
     /* no prior */
   }
@@ -282,7 +282,7 @@ export function registerUpdater(): void {
     void tryUpdateCheck(engine).catch(() => undefined)
   }, POLL_INTERVAL_MS)
 
-  ipcMain.handle("olliecode:update-status", async () => {
+  ipcMain.handle("code-nexus:update-status", async () => {
     if (!currentUpdate) return { ready: false }
     return { ready: true, version: currentUpdate.meta.version, notes: currentUpdate.meta.notes }
   })
@@ -301,14 +301,14 @@ export function registerUpdater(): void {
   // is dropped at the preload boundary; even if an older renderer passes
   // it, this handler ignores it.
   ipcMain.handle(
-    "olliecode:update-confirm",
+    "code-nexus:update-confirm",
     async (_, info: { version?: string }) => {
       const version = info?.version || "latest"
       const r = await dialog.showMessageBox({
         type: "question",
-        title: "olliEcode update",
+        title: "Code Nexus update",
         message: `Install version ${version}?`,
-        detail: "olliEcode will close and reopen.",
+        detail: "Code Nexus will close and reopen.",
         buttons: ["Install", "Later"],
         defaultId: 0,
         cancelId: 1,
@@ -322,9 +322,9 @@ export function registerUpdater(): void {
   // version badge — a glance-only "v2026.11.05.7" so the user always knows
   // what they're on without hovering the update pill (which used to leak
   // the full notes into its tooltip).
-  ipcMain.handle("olliecode:app-version", async () => app.getVersion())
+  ipcMain.handle("code-nexus:app-version", async () => app.getVersion())
 
-  ipcMain.handle("olliecode:update-install", async () => {
+  ipcMain.handle("code-nexus:update-install", async () => {
     if (!currentUpdate) return { ok: false, message: "no update ready" }
     // Guardrails against the silent-failure patterns that let a stuck install
     // read as "nothing happens" from the user's side.

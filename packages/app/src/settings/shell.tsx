@@ -1,6 +1,7 @@
 import { Tabs } from "@opencode/ui/tabs"
 import { useDialog } from "@opencode/ui/context/dialog"
-import { createEffect, createMemo, For, on, onCleanup, onMount, Show, Switch, Match, type Accessor } from "solid-js"
+import { Loader } from "@opencode/ui/loader"
+import { createEffect, createMemo, For, on, onCleanup, onMount, Show, Switch, Match, lazy, Suspense, type Accessor } from "solid-js"
 import { createStore } from "solid-js/store"
 import { useLanguage } from "@/runtime/i18n/language"
 import { useTabs } from "@/shell/tabs/tabs"
@@ -36,6 +37,8 @@ import { pageIcons, pageLabels } from "./pages"
 import { PluginSettingsPages } from "@/runtime/plugin/settings-page-view"
 import "@/settings/settings.css"
 
+const UsageHistoryDashboard = lazy(() => import("@/usage/history").then((m) => ({ default: m.UsageHistoryDashboard })))
+
 const rootClientTabs = [
   { value: "general", icon: pageIcons.general, label: "settings.tab.preferences" },
   { value: "appearance", icon: pageIcons.appearance, label: "settings.general.section.appearance" },
@@ -46,6 +49,7 @@ const rootClientTabs = [
 const serverTabs = [
   { value: "providers", icon: pageIcons.providers, label: "settings.providers.title" },
   { value: "models", icon: pageIcons.models, label: "settings.models.title" },
+  { value: "usage", icon: pageIcons.usage, label: "settings.usage.title" },
   { value: "extensions", icon: pageIcons.extensions, label: "settings.tab.extensions" },
   { value: "projects", icon: pageIcons.projects, label: "settings.tab.projects" },
   { value: "workspaces", icon: pageIcons.workspaces, label: "settings.tab.workspaces" },
@@ -55,6 +59,7 @@ const serverTabs = [
 const serverPages = {
   providers: { title: "settings.providers.title", description: "settings.providers.description" },
   models: { title: "settings.models.title", description: "settings.models.description" },
+  usage: { title: "settings.usage.title", description: "settings.usage.description" },
   extensions: { title: "settings.tab.extensions", description: "settings.extensions.description" },
   projects: { title: "settings.projects.title", description: "settings.projects.description" },
   workspaces: { title: "settings.tab.workspaces", description: "settings.workspaces.description" },
@@ -309,6 +314,11 @@ function RootSettings() {
                 headerAction={<SettingsServerSwitcher />}
                 onConsumeTarget={() => setState("modelProvider", undefined)}
               />
+            </Tabs.Content>
+            <Tabs.Content value="usage" class="settings-panel">
+              <Suspense fallback={<div class="p-8 flex justify-center"><Loader /></div>}>
+                <UsageHistoryDashboard headerAction={<SettingsServerSwitcher />} />
+              </Suspense>
             </Tabs.Content>
             <Tabs.Content value="extensions" class="settings-panel">
               <SettingsExtensions

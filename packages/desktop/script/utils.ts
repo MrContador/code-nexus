@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs"
 import { chmod, copyFile, mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
@@ -9,7 +10,7 @@ const Manifest = Schema.fromJsonString(Schema.Struct({ version: Schema.NonEmptyS
 
 export type Channel = "local" | "dev" | "beta" | "prod"
 
-// olliEcode: accept "local" and make it the default so User-Agent matches the
+// Code Nexus: accept "local" and make it the default so User-Agent matches the
 // standalone CLI build and we get the looser free-tier bucket at opencode.ai.
 export function resolveChannel(): Channel {
   const raw = process.env.OPENCODE_CHANNEL
@@ -111,7 +112,12 @@ export async function copyBuiltCliToResources(root: string, dest = windowsify("r
 // 200 MB binary on first launch.
 async function copyCliToResources(pkg: string, dest: string) {
   const cli = getCurrentCli()
-  await copyFile(join(pkg, "bin", cli.os === "win32" ? "opencode.exe" : "opencode"), dest)
+  const exeName = cli.os === "win32" ? "code-nexus.exe" : "code-nexus"
+  const legacyExe = cli.os === "win32" ? "opencode.exe" : "opencode"
+  const source = existsSync(join(pkg, "bin", exeName))
+    ? join(pkg, "bin", exeName)
+    : join(pkg, "bin", legacyExe)
+  await copyFile(source, dest)
   await prepareCli(dest)
 
   const manifest = Option.getOrUndefined(

@@ -1,13 +1,13 @@
-# olliEcode Free â€” Source
+# Code Nexus Free — Source
 
 A fork of [OpenCode](https://github.com/anomalyco/opencode) (MIT) with a rebranded interface and an Auto JB toggle.
 
 ## Included
 
-- `packages/` â€” app, desktop, CLI, core, AI, UI, plugins and the rest of the source tree
-- `script/` and `patches/` â€” upstream build tooling
-- `installer/olliEcode-Setup-Free.iss` â€” the free-edition Inno Setup script
-- `shortcuts/olliEcode.vbs` â€” the direct launcher
+- `packages/` — app, desktop, CLI, core, AI, UI, plugins and the rest of the source tree
+- `script/` and `patches/` — upstream build tooling
+- `installer/Code-Nexus-Setup-Free.iss` — the free-edition Inno Setup script
+- `shortcuts/code-nexus.vbs` — the direct launcher
 - `CHANGELOG-free-2027.1.1.9.md`
 
 ## Not included
@@ -16,11 +16,11 @@ Release signing keys, the license Worker, the R2 release feed, private infrastru
 
 ## Build
 
-`ash
+```bash
 bun install
 bun --cwd packages/cli build
 bun --cwd packages/desktop build
-`
+```
 
 The desktop build produces `packages/desktop/out`. The CLI build produces `packages/cli/dist`. A signed release requires your own Ed25519 key and integrity manifest; a development build does not.
 

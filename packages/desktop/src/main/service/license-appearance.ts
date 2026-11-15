@@ -1,4 +1,4 @@
-import { KITS, palette, themeKit } from "../../../../app/src/olliecode-themes"
+import { KITS, palette, themeKit } from "../../../../app/src/code-nexus-themes"
 
 function variables(id: string) {
   const p = palette(themeKit(id))
@@ -62,7 +62,7 @@ export function licenseAppearance(id: string) {
 // Known palette values only. A theme IPC event cannot inject CSS or markup.
 export function licenseThemeListener() {
   const styles = Object.fromEntries(KITS.map((kit) => [kit.id, licenseAppearance(kit.id).split("</style>")[0]!.split('>')[1]]))
-  return `require('electron').ipcRenderer.on('olliecode:theme-changed', (_event, id) => {
+  return `require('electron').ipcRenderer.on('code-nexus:theme-changed', (_event, id) => {
     const styles = ${JSON.stringify(styles)};
     if (styles[id]) document.getElementById('license-palette').textContent = styles[id];
   });`

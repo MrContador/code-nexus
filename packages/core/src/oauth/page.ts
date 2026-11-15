@@ -249,25 +249,12 @@ const STYLES = `
   @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
 `
 
-// olliEcode wordmark — same path geometry as packages/ui/src/components/logo.tsx (Logo).
-const WORDMARK = `<svg class="wordmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 234 42" fill="none" aria-label="olliEcode" role="img">
-        <path d="M21 30H9V18H21V30Z" fill="var(--oc-icon-weak)" />
-        <path d="M21 12H9V30H21V12ZM27 36H3V6H27V36Z" fill="var(--oc-icon-base)" />
-        <path d="M45 30H39V24H45V30Z" fill="var(--oc-icon-weak)" />
-        <path d="M33 6H39V30H45V36H33V6Z" fill="var(--oc-icon-base)" />
-        <path d="M63 30H57V24H63V30Z" fill="var(--oc-icon-weak)" />
-        <path d="M51 6H57V30H63V36H51V6Z" fill="var(--oc-icon-base)" />
-        <path d="M72 6H78V12H72V6ZM72 15H78V36H72V15Z" fill="var(--oc-icon-base)" />
-        <path d="M111 24V30H93V24H111Z" fill="var(--oc-icon-weak)" />
-        <path d="M111 24H93V30H111V36H87V6H111V24ZM93 18H105V12H93V18Z" fill="var(--oc-icon-base)" />
-        <path d="M141 30H123V18H141V30Z" fill="var(--oc-icon-weak)" />
-        <path d="M141 12H123V30H141V36H117V6H141V12Z" fill="var(--oc-icon-strong)" />
-        <path d="M165 30H153V18H165V30Z" fill="var(--oc-icon-weak)" />
-        <path d="M165 12H153V30H165V12ZM171 36H147V6H171V36Z" fill="var(--oc-icon-strong)" />
-        <path d="M195 30H183V18H195V30Z" fill="var(--oc-icon-weak)" />
-        <path d="M195 12H183V30H195V12ZM201 36H177V6H195V0H201V36Z" fill="var(--oc-icon-strong)" />
-        <path d="M231 24V30H213V24H231Z" fill="var(--oc-icon-weak)" />
-        <path d="M213 12V18H225V12H213ZM231 24H213V30H231V36H207V6H231V24Z" fill="var(--oc-icon-strong)" />
+// Code Nexus wordmark.
+const WORDMARK = `<svg class="wordmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 234 42" fill="none" aria-label="Code Nexus" role="img">
+        <text x="117" y="25" text-anchor="middle" dominant-baseline="central" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-weight="800" font-size="28" letter-spacing="-0.03em">
+          <tspan fill="var(--oc-icon-base)">Code </tspan>
+          <tspan fill="var(--oc-icon-strong)">Nexus</tspan>
+        </text>
       </svg>`
 
 const ICON_CHECK = `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9" /><path d="m8.5 12.5 2.4 2.4 4.6-5.4" /></svg>`

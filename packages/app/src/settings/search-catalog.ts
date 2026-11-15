@@ -250,6 +250,7 @@ export const serverSettings: Entry<SettingsServerTab | "servers">[] = [
   { tab: "workspaces", label: "settings.tab.workspaces", keywords: "workspaces disk usage cleanup delete" },
   { tab: "providers", label: "settings.providers.title", keywords: "connect api key credentials" },
   { tab: "models", label: "settings.models.title", keywords: "model picker visibility" },
+  { tab: "usage", label: "settings.usage.title", keywords: "usage history tokens analytics stats consumo dashboard" },
   { tab: "extensions", label: "settings.tab.extensions" },
   {
     tab: "extensions",

@@ -14,6 +14,8 @@ const cli = path.resolve(dir, "../cli/dist")
 
 const channel = resolveChannel()
 
+process.env.NODE_OPTIONS = `${process.env.NODE_OPTIONS ?? ""} --max-old-space-size=8192`.trim()
+
 process.chdir(dir)
 
 await $`bun ./script/copy-icons.ts ${channel}`
@@ -29,6 +31,6 @@ if (built) await copyBuiltCliToResources(cli)
 
 if (!built) await downloadCliToResources(channel === "beta" ? "beta" : undefined)
 
-await $`bunx electron-vite build`
+await $`node --max-old-space-size=8192 ./node_modules/electron-vite/bin/electron-vite.js build`
 
 await verifyBundles(path.join(dir, "out"))

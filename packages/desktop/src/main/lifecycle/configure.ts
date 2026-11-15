@@ -31,8 +31,16 @@ export function configureApplication() {
 
   process.env.OPENCODE_DISABLE_EMBEDDED_WEB_UI = "true"
 
-  app.setName(APP_NAME)
-  app.setAppUserModelId(APP_ID)
+  if (APP_NAME) {
+    try {
+      app.setName(APP_NAME)
+    } catch {}
+  }
+  if (APP_ID) {
+    try {
+      app.setAppUserModelId(APP_ID)
+    } catch {}
+  }
   app.commandLine.appendSwitch("proxy-bypass-list", "<-loopback>")
   const features = app.commandLine.getSwitchValue("enable-features")
   app.commandLine.appendSwitch("enable-features", features ? `${jsCallStackFeature},${features}` : jsCallStackFeature)
@@ -65,7 +73,8 @@ export function configureApplication() {
     app.commandLine.appendSwitch("enable-precise-memory-info")
 
   const testRoot = createTestRoot()
-  app.setPath("userData", testRoot ? path.join(testRoot, "desktop") : path.join(getAppPath("appData") || process.env.APPDATA || path.join(homedir(), "AppData", "Roaming"), APP_ID))
+  const fallbackAppId = APP_ID || "ai.code-nexus.desktop.free"
+  app.setPath("userData", testRoot ? path.join(testRoot, "desktop") : path.join(getAppPath("appData") || process.env.APPDATA || path.join(homedir(), "AppData", "Roaming"), fallbackAppId))
 
   if (testRoot) {
     app.setPath("sessionData", path.join(testRoot, "session"))

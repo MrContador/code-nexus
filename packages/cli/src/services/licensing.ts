@@ -8,7 +8,7 @@ import { Context, Effect, Layer } from "effect"
 import { Global } from "@opencode/util/global"
 import { checkAntiDebug } from "./anti-debug"
 
-// olliEcode licensing. Online activation binds a key to a stable per-machine
+// Code Nexus licensing. Online activation binds a key to a stable per-machine
 // pair of anchors; the server returns an Ed25519-signed token this process
 // verifies on every launch with a baked public key. The private key never
 // leaves the Worker, so lifting the embedded constant from a dumped binary
@@ -27,9 +27,9 @@ const CACHE_FILENAME = "license.json"
 // Ed25519 public key injected at build time (see scripts/package.ps1) as a
 // base64-encoded SPKI PEM. The placeholder is a safe default for dev builds
 // that never touch the production Worker — they fail verify locally.
-declare const OLLIECODE_LICENSE_PUBKEY: string | undefined
+declare const CODE_NEXUS_LICENSE_PUBKEY: string | undefined
 const EMBEDDED_PUBKEY =
-  (typeof OLLIECODE_LICENSE_PUBKEY === "string" && OLLIECODE_LICENSE_PUBKEY) ||
+  (typeof CODE_NEXUS_LICENSE_PUBKEY === "string" && CODE_NEXUS_LICENSE_PUBKEY) ||
   "dev-pubkey-replace"
 
 // Accepted SPKI SHA-256 pins (base64). We pin to the LEAF plus the specific
@@ -58,7 +58,7 @@ export interface Cached {
   readonly hwid: string
   readonly tier: string
   readonly expires_at: number
-  // olliEcode email-at-activate (optional). Kept in the cache so a license
+  // Code Nexus email-at-activate (optional). Kept in the cache so a license
   // reinstall on the same box re-presents the same email to the Worker and
   // doesn't trip the mismatch check. Backward-compatible with pre-email
   // keys where this field is undefined.
@@ -78,16 +78,16 @@ export interface Cached {
 // as well as the token level. The salt is also obfuscated at build; lifting
 // it from a dumped binary without also lifting the HWID formula does not
 // enable decrypting another user's cache.
-declare const OLLIECODE_CACHE_SALT: string | undefined
+declare const CODE_NEXUS_CACHE_SALT: string | undefined
 const CACHE_SALT =
-  (typeof OLLIECODE_CACHE_SALT === "string" && OLLIECODE_CACHE_SALT) || "dev-cache-salt-replace"
+  (typeof CODE_NEXUS_CACHE_SALT === "string" && CODE_NEXUS_CACHE_SALT) || "dev-cache-salt-replace"
 const CACHE_MAGIC = Buffer.from("OLEC1") // 5 bytes, file format marker
 // Skew tolerance for the clock-rollback guard. NTP drift, DST transitions,
 // and VM suspend/resume can all legitimately push the wall clock backward
 // by a few minutes; anything larger than this window is a user action.
 const CLOCK_ROLLBACK_TOLERANCE_SEC = 10 * 60
 
-export class Service extends Context.Service<Service, Interface>()("@olliecode/Licensing") {}
+export class Service extends Context.Service<Service, Interface>()("@code-nexus/Licensing") {}
 
 export interface Interface {
   readonly cachePath: string
@@ -167,7 +167,7 @@ function platformHwid(): string {
 function deriveCacheKey(hwid: string): Buffer {
   const ikm = Buffer.from(hwid, "utf8")
   const salt = Buffer.from(CACHE_SALT, "utf8")
-  return Buffer.from(crypto.hkdfSync("sha256", ikm, salt, Buffer.from("olliecode-cache-v1"), 32))
+  return Buffer.from(crypto.hkdfSync("sha256", ikm, salt, Buffer.from("code-nexus-cache-v1"), 32))
 }
 
 // Pack:   MAGIC(5) | VERSION(1) | IV(12) | TAG(16) | CT(...)
@@ -207,7 +207,7 @@ export const layer = Layer.effect(
   Effect.gen(function* () {
     const global = yield* Global.Service
     const cachePath = path.join(global.data, CACHE_FILENAME)
-    const apiBase = process.env.OLLIECODE_LICENSE_API ?? DEFAULT_API
+    const apiBase = process.env.CODE_NEXUS_LICENSE_API ?? DEFAULT_API
     return Service.of({
       cachePath,
       apiBase,
@@ -299,7 +299,7 @@ function pinnedPostJson<T>(url: string, body: unknown, timeoutMs = 15000): Promi
         headers: {
           "content-type": "application/json",
           "content-length": String(data.length),
-          "user-agent": "olliecode-cli",
+          "user-agent": "code-nexus-cli",
         },
         timeout: timeoutMs,
         // Node's documented hook for custom cert validation. Returning an
@@ -512,7 +512,7 @@ export const ensureLicensed = Effect.gen(function* () {
   const cached = svc.load()
   if (!cached) {
     throw new LicenseError(
-      "olliEcode is not activated on this machine. Run: olliecode license activate <KEY>  (buy at https://example.com/buy)",
+      "Code Nexus is not activated on this machine. Run: code-nexus license activate <KEY>  (buy at https://example.com/buy)",
     )
   }
   const hwid = svc.hwid()
@@ -559,8 +559,8 @@ export const ensureLicensed = Effect.gen(function* () {
   // present on releases, "dev" otherwise. Both are observational, server
   // never refuses validate on canary absence.
   const canary = crypto.randomBytes(16).toString("hex")
-  const buildId = (typeof OLLIECODE_LICENSE_PUBKEY === "string" && OLLIECODE_LICENSE_PUBKEY)
-    ? crypto.createHash("sha256").update(OLLIECODE_LICENSE_PUBKEY).digest("hex").slice(0, 8)
+  const buildId = (typeof CODE_NEXUS_LICENSE_PUBKEY === "string" && CODE_NEXUS_LICENSE_PUBKEY)
+    ? crypto.createHash("sha256").update(CODE_NEXUS_LICENSE_PUBKEY).digest("hex").slice(0, 8)
     : "dev"
   pinnedPostJson<{ ok: boolean; error?: string }>(
     `${svc.apiBase}/api/validate`,

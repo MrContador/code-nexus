@@ -32,13 +32,14 @@ function run(target) {
 
 const envPath = process.env.OPENCODE_BIN_PATH
 const scriptDir = path.dirname(fs.realpathSync(__filename))
-const command = path.basename(__filename).replace(/\.cjs$/, "")
-const nodeBuild = command === "opencode-node"
-const sourceCommand = nodeBuild ? "opencode2-node" : "opencode"
+const command = process.env.OPENCODE_BIN_COMMAND || path.basename(__filename).replace(/\.cjs$/, "")
+const isCodeNexus = command.startsWith("code-nexus") || command === "cnx"
+const nodeBuild = command === "opencode-node" || command === "code-nexus2-node"
+const sourceCommand = nodeBuild ? "opencode2-node" : (isCodeNexus ? "code-nexus" : "opencode")
 const cached = path.join(scriptDir, `.${command}`)
 const platform = { darwin: "darwin", linux: "linux", win32: "windows" }[os.platform()] || os.platform()
 const arch = { x64: "x64", arm64: "arm64", arm: "arm" }[os.arch()] || os.arch()
-const base = `@opencode/cli${nodeBuild ? "-node" : ""}-` + platform + "-" + arch
+const base = `@code-nexus/cli${nodeBuild ? "-node" : ""}-` + platform + "-" + arch
 const binary = platform === "windows" ? `${sourceCommand}.exe` : sourceCommand
 
 function supportsAvx2() {
@@ -125,9 +126,12 @@ function findBinary(startDir) {
 
 const resolved = envPath || (fs.existsSync(cached) ? cached : findBinary(scriptDir))
 if (!resolved) {
+  const packageNames = isCodeNexus
+    ? ['"@code-nexus/cli"', '"@code-nexus/cli-node"']
+    : names.map((name) => `"${name}"`.replace("@opencode/", "@code-nexus/"))
   console.error(
     `It seems that your package manager failed to install the right ${command} CLI package. Try manually installing ` +
-      names.map((name) => `"${name}"`).join(" or ") +
+      packageNames.join(" or ") +
       " package",
   )
   process.exit(1)

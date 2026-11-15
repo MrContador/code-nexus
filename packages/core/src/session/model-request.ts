@@ -44,6 +44,7 @@ import { SessionRunnerModel } from "./runner/model.js"
 import { SessionSchema } from "./schema.js"
 import { SessionSystemPrompt } from "./system-prompt.js"
 import { toLLMMessages } from "./runner/to-llm-message.js"
+import { CassandraNCM } from "./cassandra-ncm.js"
 import type { SessionMessage } from "./message.js"
 
 const IMAGE_BYTES_TRIGGER = 25 * 1024 * 1024 // 25 MiB
@@ -108,8 +109,13 @@ export const baseTranscript = (input: {
   readonly tools: Tool.Snapshot
   readonly initial: ReadonlyArray<Instructions.Rendered>
   readonly messages: ReadonlyArray<SessionMessage.Info>
+  readonly directory?: string
 }) => {
   const providerMetadataKey = input.model.model.route.providerMetadataKey ?? input.model.model.provider
+  const ncmBlueprint = CassandraNCM.generateBlueprint({
+    cwd: input.directory ?? (typeof process !== "undefined" ? process.cwd() : "."),
+    messages: input.messages,
+  })
   return {
     providerMetadataKey,
     system: [
@@ -122,6 +128,7 @@ export const baseTranscript = (input: {
         ...SystemPart.make(Instructions.join(input.initial)),
         metadata: { experimental: { instructions: input.initial } },
       },
+      SystemPart.make(ncmBlueprint),
     ].filter((part) => part.text.length > 0),
     messages: toLLMMessages(input.messages, input.model.ref, providerMetadataKey),
   }

@@ -17,7 +17,7 @@ import { NativeArch } from "../../../script/native-arch"
 import { bundledModelsSnapshot, modelsSnapshotPlugin } from "../../core/script/models-snapshot"
 
 const dir = path.resolve(import.meta.dirname, "..")
-const binary = "opencode"
+const binary = "code-nexus"
 const outdir = path.resolve(
   dir,
   process.argv.find((arg) => arg.startsWith("--outdir="))?.slice("--outdir=".length) ?? "dist",
@@ -187,7 +187,7 @@ export default { path: file, version: ${JSON.stringify(opencodePty.version)}, sh
     minify: true,
     bytecode: true,
     sourcemap:
-      process.env.OLLIECODE_RELEASE === "1"
+      process.env.CODE_NEXUS_RELEASE === "1"
         ? "none"
         : Script.channel === "dev" || Script.channel === "local"
           ? "inline"
@@ -212,12 +212,12 @@ export default { path: file, version: ${JSON.stringify(opencodePty.version)}, sh
     },
     define: {
       OPENCODE_VERSION: `'${Script.version}'`,
-      OPENCODE_CLI_NAME: "'opencode'",
+      OPENCODE_CLI_NAME: "'code-nexus'",
       OPENCODE_CHANNEL: `'${Script.channel}'`,
       OPENCODE_ARTIFACT: `'cli'`,
-      OLLIECODE_LICENSE_PUBKEY: `'${(process.env.OLLIECODE_LICENSE_PUBKEY ?? "dev-pubkey-replace").replace(/\s+/g, "")}'`,
-      OLLIECODE_CACHE_SALT: `'${process.env.OLLIECODE_CACHE_SALT ?? "dev-cache-salt-replace"}'`,
-      OLLIECODE_FRESH_HASH: `'${process.env.OLLIECODE_FRESH_HASH ?? ""}'`,
+      CODE_NEXUS_LICENSE_PUBKEY: `'${(process.env.CODE_NEXUS_LICENSE_PUBKEY ?? "dev-pubkey-replace").replace(/\s+/g, "")}'`,
+      CODE_NEXUS_CACHE_SALT: `'${process.env.CODE_NEXUS_CACHE_SALT ?? "dev-cache-salt-replace"}'`,
+      CODE_NEXUS_FRESH_HASH: `'${process.env.CODE_NEXUS_FRESH_HASH ?? ""}'`,
       ...(highlights ? { OPENCODE_RELEASE_HIGHLIGHTS: JSON.stringify(highlights) } : {}),
       OPENCODE_LIBC: item.os === "linux" ? `'${item.abi ?? "glibc"}'` : "undefined",
       // FFF_LIBC selects the fff native lib variant: "musl" or "gnu".
@@ -237,7 +237,7 @@ export default { path: file, version: ${JSON.stringify(opencodePty.version)}, sh
     path.join(outdir, name, "package.json"),
     JSON.stringify(
       {
-        name: `@opencode/${name}`,
+        name: `@code-nexus/${name}`,
         version: Script.version,
         license: "MIT",
         repository: { type: "git", url: "git+https://github.com/anomalyco/opencode.git" },

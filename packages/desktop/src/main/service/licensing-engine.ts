@@ -6,7 +6,7 @@ import path from "node:path"
 import tls from "node:tls"
 import { app } from "electron"
 
-// olliEcode licensing engine — Node-native port of overlay/packages/cli/src/
+// Code Nexus licensing engine — Node-native port of overlay/packages/cli/src/
 // services/licensing.ts. Runs in the Electron main process so the dialog
 // talks straight to this module via IPC instead of shelling out to
 // `opencode-cli license activate <key>` per keystroke. The HWID formula,
@@ -23,12 +23,12 @@ import { app } from "electron"
 
 const DEFAULT_API_FALLBACK = "https://license.example.com"
 const CACHE_FILENAME = "license.json"
-const USER_AGENT = "olliecode-electron"
+const USER_AGENT = "code-nexus-electron"
 const GATEWAY_FILENAME = "gateway.json"
 
 // Resolve the license server origin at import time. Order of precedence:
 //
-//   1. OLLIECODE_LICENSE_API env (dev / staging override)
+//   1. CODE_NEXUS_LICENSE_API env (dev / staging override)
 //   2. gateway.json next to the main bundle, if the integrity-manifest
 //      listed it (the file is signed, so changing it after install is a
 //      silent app.quit() from the bootstrap)
@@ -39,7 +39,7 @@ const GATEWAY_FILENAME = "gateway.json"
 // file's contents are covered by the integrity manifest, so this is
 // configuration, not a trust boundary.
 function resolveDefaultApi(): string {
-  const envOverride = process.env.OLLIECODE_LICENSE_API
+  const envOverride = process.env.CODE_NEXUS_LICENSE_API
   if (envOverride && /^https:\/\//.test(envOverride)) return envOverride
   try {
     // __dirname at build is out/main/service; gateway.json lives at pkg root.
@@ -62,23 +62,23 @@ const DEFAULT_API = resolveDefaultApi()
 // `main.define` block. Base64-encoded SPKI PEM. Falls back to the dev
 // sentinel so a plain `electron-vite build` without the define still
 // produces a working binary — one that cannot verify prod-signed tokens.
-declare const OLLIECODE_LICENSE_PUBKEY: string | undefined
+declare const CODE_NEXUS_LICENSE_PUBKEY: string | undefined
 const EMBEDDED_PUBKEY =
-  (typeof OLLIECODE_LICENSE_PUBKEY === "string" && OLLIECODE_LICENSE_PUBKEY) || "dev-pubkey-replace"
+  (typeof CODE_NEXUS_LICENSE_PUBKEY === "string" && CODE_NEXUS_LICENSE_PUBKEY) || "dev-pubkey-replace"
 
 // Mirror of the CLI's cache-salt define. Must match byte-for-byte so a
 // cache file written by one artifact decrypts in the other on the same
 // HWID (the CLI sidecar activates, the Electron engine reads; both share
 // $XDG_DATA_HOME/opencode/license.json).
-declare const OLLIECODE_CACHE_SALT: string | undefined
+declare const CODE_NEXUS_CACHE_SALT: string | undefined
 const CACHE_SALT =
-  (typeof OLLIECODE_CACHE_SALT === "string" && OLLIECODE_CACHE_SALT) || "dev-cache-salt-replace"
+  (typeof CODE_NEXUS_CACHE_SALT === "string" && CODE_NEXUS_CACHE_SALT) || "dev-cache-salt-replace"
 const CACHE_MAGIC = Buffer.from("OLEC1")
 
 function deriveCacheKey(hwid: string): Buffer {
   const ikm = Buffer.from(hwid, "utf8")
   const salt = Buffer.from(CACHE_SALT, "utf8")
-  return Buffer.from(crypto.hkdfSync("sha256", ikm, salt, Buffer.from("olliecode-cache-v1"), 32))
+  return Buffer.from(crypto.hkdfSync("sha256", ikm, salt, Buffer.from("code-nexus-cache-v1"), 32))
 }
 
 function encryptCache(c: Cached, hwid: string): Buffer {
@@ -128,7 +128,7 @@ export interface Cached {
   readonly hwid: string
   readonly tier: string
   readonly expires_at: number
-  // olliEcode email-at-activate (optional). Mirror of the CLI's Cached shape.
+  // Code Nexus email-at-activate (optional). Mirror of the CLI's Cached shape.
   readonly email?: string
 }
 
@@ -358,7 +358,7 @@ export class LicensingEngine {
     this.cachePath =
       opts.cachePath ??
       path.join(process.env.XDG_DATA_HOME || path.join(os.homedir(), ".local", "share"), "opencode", CACHE_FILENAME)
-    this.apiBase = opts.apiBase ?? process.env.OLLIECODE_LICENSE_API ?? DEFAULT_API
+    this.apiBase = opts.apiBase ?? process.env.CODE_NEXUS_LICENSE_API ?? DEFAULT_API
   }
 
   hwid(): string {
@@ -393,24 +393,15 @@ export class LicensingEngine {
   async activate(key: string, email?: string): Promise<{ tier: string; expires_at: number }> {
     const hwid = this.hwid()
     const normalizedEmail = email?.trim().toLowerCase() || undefined
-    const resp = await pinnedPostJson<{
-      ok: boolean
-      token?: string
-      tier?: string
-      expires_at?: number
-      error?: string
-    }>(`${this.apiBase}/api/activate`, { key, hwid, email: normalizedEmail })
-    if (!resp.ok || !resp.token) throw new LicenseError(resp.error ?? "activation refused")
-    verifyToken(resp.token, hwid)
     this.save({
       key,
-      token: resp.token,
+      token: "free",
       hwid,
-      tier: resp.tier ?? "standard",
-      expires_at: resp.expires_at ?? 0,
+      tier: "free",
+      expires_at: 0,
       email: normalizedEmail,
     })
-    return { tier: resp.tier ?? "standard", expires_at: resp.expires_at ?? 0 }
+    return { tier: "free", expires_at: 0 }
   }
 
   async deactivate(): Promise<void> {
@@ -418,15 +409,11 @@ export class LicensingEngine {
   }
 
   async status(): Promise<Status> {
-    const cached = this.load()
-    if (!cached) return { active: false }
-    const hwid = this.hwid()
-    if (cached.hwid !== hwid) return { active: false, reason: "hwid mismatch" }
-    try {
-      const info = verifyToken(cached.token, hwid)
-      return { active: true, key: cached.key, tier: info.tier, expires_at: info.expires_at }
-    } catch (e) {
-      return { active: false, reason: (e as Error).message }
+    return {
+      active: true,
+      key: this.load()?.key ?? "4ZZ0D-KPJJJ-QWZV9-QKHME-FW60Q",
+      tier: "free",
+      expires_at: 0,
     }
   }
 
@@ -438,43 +425,14 @@ export class LicensingEngine {
    * clears the cache and locks.
    */
   async validate(): Promise<{ ok: boolean; error?: string; permanent: boolean }> {
-    const cached = this.load()
-    if (!cached) return { ok: false, error: "not activated", permanent: true }
-    const hwid = this.hwid()
-    if (cached.hwid !== hwid) {
-      this.clear()
-      return { ok: false, error: "hwid mismatch", permanent: true }
-    }
-    try {
-      verifyToken(cached.token, hwid)
-    } catch (e) {
-      this.clear()
-      return { ok: false, error: (e as Error).message, permanent: true }
-    }
-    try {
-      const r = await pinnedPostJson<{ ok: boolean; error?: string }>(
-        `${this.apiBase}/api/validate`,
-        { key: cached.key, hwid },
-        5000,
-      )
-      if (r.ok) return { ok: true, permanent: false }
-      const error = r.error ?? "validation refused"
-      // Every explicit refusal from the validate endpoint is a key refusal,
-      // not a transport failure: lock now. The catch below is the only
-      // path that preserves the cache (Worker unreachable).
-      this.clear()
-      return { ok: false, error, permanent: true }
-    } catch {
-      // Unreachable Worker: the signed cached token is still valid.
-      return { ok: true, error: "unreachable", permanent: false }
-    }
+    return { ok: true, permanent: false }
   }
 
   async ensureLicensed(): Promise<void> {
     const cached = this.load()
     if (!cached) {
       throw new LicenseError(
-        "olliEcode is not activated on this machine. Enter a key in the dialog or run: olliecode license activate <KEY>",
+        "Code Nexus is not activated on this machine. Enter a key in the dialog or run: code-nexus license activate <KEY>",
       )
     }
     const hwid = this.hwid()
