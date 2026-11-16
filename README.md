@@ -115,6 +115,15 @@ O **Code Nexus** resolve esse paradigma através da cooperação simbiótica ent
 
 ---
 
+## 🚀 Log de Atualizações do Ciclo
+
+- **Correção & Persistência de Provedores**: Resolução do módulo de toasts (`showToast`), integração IPC direta para salvamento no arquivo de configuração do sistema e novo layout com scroll independente no modal de conexão.
+- **Suporte a Wallpaper Universal**: Camada de translucidez inteligente e desfoque fosco (`backdrop-filter`) para exibição contínua da imagem de fundo através de todas as telas em qualquer tema.
+- **Mapa de Calor Emerald Imutável**: Cores GitHub Emerald com códigos hexadecimais fixos (`#161b22`, `#0e4429`, `#006d32`, `#26a641`, `#39d353`) e alinhamento amplo dos meses sem cortes, garantindo legibilidade idêntica em qualquer tema selecionado.
+- **SkillHub & biSkills Grid Refinado**: Responsividade aprimorada na listagem de habilidades com proteção contra quebra de layout, chips flexíveis e botões com largura estável.
+
+---
+
 ## 📄 Licença
 
 Distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para obter mais informações.
