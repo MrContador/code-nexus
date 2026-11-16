@@ -25,16 +25,26 @@ function CustomManagedProviderIcon(props: { class?: string }) {
 }
 
 export function ProviderModelIcon(props: { provider: ModelProvider; class?: string }) {
-  const icon = () =>
-    [
-      props.provider.canonical,
-      props.provider.canonical?.replace(/-token-plan$/, ""),
-      props.provider.id.replace(/^console-/, ""),
+  const icon = () => {
+    const p = props.provider
+    if (!p) return undefined
+    const idStr = typeof p.id === "string" ? p.id : String(p.id ?? "")
+    const canStr = typeof p.canonical === "string" ? p.canonical : undefined
+    return [
+      canStr,
+      canStr?.replace(/-token-plan$/, ""),
+      idStr ? idStr.replace(/^console-/, "") : undefined,
     ].find((id): id is IconName => !!id && id !== "synthetic" && iconNames.includes(id as IconName))
+  }
+
+  const isOpencode = () => {
+    const p = props.provider
+    return p && (p.id === "opencode" || String(p.id) === "opencode")
+  }
 
   return (
     <Switch>
-      <Match when={props.provider.id === "opencode"}>
+      <Match when={isOpencode()}>
         <OpenCodeLogo class={`size-4 ${props.class ?? ""}`} />
       </Match>
       <Match when={icon()} keyed>
@@ -49,7 +59,7 @@ export function ProviderModelIcon(props: { provider: ModelProvider; class?: stri
 
 /** Detects the Console workspace from every listed model, so a search that hides some providers keeps the group. */
 export function consoleModelGroup<T extends ModelItem>(items: readonly T[]) {
-  return consoleProviderGroup([...new Map(items.map((item) => [item.provider.id, item.provider])).values()])
+  return consoleProviderGroup([...new Map(items.map((item) => [String(item.provider?.id ?? ""), item.provider])).values()])
 }
 
 /** Provider sections for a model list, with Console workspace providers nested under one OpenCode Console section. */

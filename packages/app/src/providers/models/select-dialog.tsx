@@ -529,14 +529,19 @@ function createModelSelectorController(input: {
 
 function createProviderLabels(all: () => ModelItem[]) {
   const managed = createMemo(() => consoleModelGroup(all()))
-  const managedIDs = createMemo(() => new Set(managed()?.providers.map((provider) => provider.id)))
-  const canonical = (provider: ModelItem["provider"]) => provider.canonical ?? provider.id.replace(/^console-/, "")
+  const managedIDs = createMemo(() => new Set(managed()?.providers.map((provider) => (provider?.id ? String(provider.id) : ""))))
+  const canonical = (provider: ModelItem["provider"]) => {
+    if (!provider) return ""
+    if (typeof provider.canonical === "string") return provider.canonical
+    const idStr = typeof provider.id === "string" ? provider.id : String(provider.id ?? "")
+    return idStr.replace(/^console-/, "")
+  }
 
   const direct = createMemo(
     () =>
       new Set(
         all()
-          .filter((item) => !managedIDs().has(item.provider.id))
+          .filter((item) => item?.provider && !managedIDs().has(String(item.provider.id)))
           .map((item) => canonical(item.provider)),
       ),
   )
@@ -544,14 +549,14 @@ function createProviderLabels(all: () => ModelItem[]) {
   return {
     name: (provider: ModelItem["provider"]) => {
       const group = managed()
-
-      return group && managedIDs().has(provider.id) ? consoleProviderName(group, provider.name) : provider.name
+      const idStr = provider?.id ? String(provider.id) : ""
+      return group && managedIDs().has(idStr) ? consoleProviderName(group, provider.name) : provider.name
     },
     // The workspace badge only disambiguates a managed provider that is also connected directly.
     workspace: (provider: ModelItem["provider"]) => {
       const group = managed()
-
-      if (!group || !managedIDs().has(provider.id) || !direct().has(canonical(provider))) return
+      const idStr = provider?.id ? String(provider.id) : ""
+      if (!group || !managedIDs().has(idStr) || !direct().has(canonical(provider))) return
 
       return group.workspace
     },

@@ -668,7 +668,7 @@ export function UsageHistoryDashboard(props: { headerAction?: JSX.Element; showH
             >
               <For each={heatmapGrid()}>
                 {(week) => (
-                  <div class="flex flex-col gap-1 w-full">
+                  <div class="flex flex-col gap-1 w-full min-w-0 items-center">
                     <For each={week}>
                       {(day) => {
                         const levelClass = () => {
@@ -687,7 +687,7 @@ export function UsageHistoryDashboard(props: { headerAction?: JSX.Element; showH
                         }
                         return (
                           <div
-                            class={`w-full aspect-square max-h-[14px] rounded-[2.5px] transition-all duration-150 cursor-pointer hover:scale-125 ${levelClass()}`}
+                            class={`w-full max-w-[14px] aspect-square rounded-[2.5px] transition-all duration-150 cursor-pointer hover:scale-125 ${levelClass()}`}
                             title={`${day.date}: ${day.steps} interações`}
                           />
                         )

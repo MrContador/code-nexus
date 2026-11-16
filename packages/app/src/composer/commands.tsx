@@ -165,7 +165,7 @@ export const useComposerCommands = (input: { model?: ModelSelection } = {}) => {
       slash: "memory",
       onSelect: async () => {
         const { DialogProgressiveMemory } = await import("@/session/composer/dialog-progressive-memory")
-        void dialog.show((props) => <DialogProgressiveMemory onClose={props.close} />)
+        void dialog.show(() => <DialogProgressiveMemory onClose={() => dialog.close()} />)
       },
     }),
     viewCommand({
@@ -175,7 +175,7 @@ export const useComposerCommands = (input: { model?: ModelSelection } = {}) => {
       slash: "memoria",
       onSelect: async () => {
         const { DialogProgressiveMemory } = await import("@/session/composer/dialog-progressive-memory")
-        void dialog.show((props) => <DialogProgressiveMemory onClose={props.close} />)
+        void dialog.show(() => <DialogProgressiveMemory onClose={() => dialog.close()} />)
       },
     }),
     providerCommand({
