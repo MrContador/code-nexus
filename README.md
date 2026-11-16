@@ -14,13 +14,7 @@ A fork of [OpenCode](https://github.com/anomalyco/opencode) (MIT) with a rebrand
 
 Release signing keys, the license Worker, the R2 release feed, private infrastructure, build artifacts, user data, logs and databases. The client references to those services are placeholders; point them at your own deployment.
 
-## Build
 
-```bash
-bun install
-bun --cwd packages/cli build
-bun --cwd packages/desktop build
-```
 
 The desktop build produces `packages/desktop/out`. The CLI build produces `packages/cli/dist`. A signed release requires your own Ed25519 key and integrity manifest; a development build does not.
 
