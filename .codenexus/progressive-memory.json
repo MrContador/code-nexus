@@ -1,0 +1,52 @@
+{
+  "version": "1.0",
+  "projectName": "olliecode",
+  "lastUpdated": "2026-11-15T23:54:43.435Z",
+  "memories": [
+    {
+      "id": "mem_init_01",
+      "category": "architecture",
+      "key": "core_framework",
+      "content": "Arquitetura Code Nexus Free: SolidJS no renderer, Electron no desktop, Bun workspaces no monorepo e TailwindCSS v4.",
+      "timestamp": "2026-11-15T23:54:43.436Z",
+      "confidence": 1,
+      "origin": "operator"
+    },
+    {
+      "id": "mem_init_02",
+      "category": "convention",
+      "key": "portal_popover_rule",
+      "content": "Menus e popovers flutuantes no composer devem renderizar via <Portal> com max-height dinâmico para não serem cortados pelas bordas do viewport.",
+      "timestamp": "2026-11-15T23:54:43.436Z",
+      "confidence": 1,
+      "origin": "operator"
+    },
+    {
+      "id": "mem_init_03",
+      "category": "resolution",
+      "key": "solidjs_signals_fix",
+      "content": "No SolidJS, inicializadores passados a createSignal devem ser executados de imediato para evitar armazenar a função como valor inicial (previne NaN% e TypeError: .has is not a function).",
+      "timestamp": "2026-11-15T23:54:43.436Z",
+      "confidence": 1,
+      "origin": "operator"
+    },
+    {
+      "id": "mem_init_04",
+      "category": "convention",
+      "key": "git_large_files",
+      "content": "Commits do Git nunca devem incluir packages/cli/.bun-cache nem binários superiores a 100MB (política restrita do GitHub).",
+      "timestamp": "2026-11-15T23:54:43.436Z",
+      "confidence": 1,
+      "origin": "operator"
+    },
+    {
+      "id": "mem_init_05",
+      "category": "preference",
+      "key": "author_credits",
+      "content": "O Motor Híbrido LLM + NCM 2.0 possui autoria e créditos atribuídos a Mörlsara, fundamentado na pesquisa de Stanford Hazy Research.",
+      "timestamp": "2026-11-15T23:54:43.436Z",
+      "confidence": 1,
+      "origin": "operator"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 export * as Session from "./session.js"
 export * from "./session/schema.js"
 export { CassandraNCM } from "./session/cassandra-ncm.js"
+export { ProgressiveMemory } from "./session/progressive-memory.js"
 
 import { DateTime, Effect, Layer, Context, Option, Stream } from "effect"
 import { LLMClient } from "@opencode/ai/effect"

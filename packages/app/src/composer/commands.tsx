@@ -158,6 +158,26 @@ export const useComposerCommands = (input: { model?: ModelSelection } = {}) => {
         surface.subtab("skills")
       },
     }),
+    viewCommand({
+      id: "progressive.memory",
+      title: "Memória Progressiva (NCM 2.0)",
+      description: "Gerencie o livro-razão de fatos, diretivas e convenções aprendidas",
+      slash: "memory",
+      onSelect: async () => {
+        const { DialogProgressiveMemory } = await import("@/session/composer/dialog-progressive-memory")
+        void dialog.show((props) => <DialogProgressiveMemory onClose={props.close} />)
+      },
+    }),
+    viewCommand({
+      id: "progressive.memory.alias",
+      title: "Memória Progressiva",
+      description: "Gerencie o livro-razão de fatos e resoluções aprendidas",
+      slash: "memoria",
+      onSelect: async () => {
+        const { DialogProgressiveMemory } = await import("@/session/composer/dialog-progressive-memory")
+        void dialog.show((props) => <DialogProgressiveMemory onClose={props.close} />)
+      },
+    }),
     providerCommand({
       id: "provider.connect",
       title: language.t("command.provider.connect"),

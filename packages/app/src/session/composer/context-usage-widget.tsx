@@ -6,6 +6,7 @@ import { useLanguage } from "@/runtime/i18n/language"
 import { showToast } from "@/shell/notifications/toast"
 import { Button } from "@opencode/ui/button"
 import { Icon } from "@opencode/ui/icon"
+import { useDialog } from "@opencode/ui/context/dialog"
 import { useSettingsSurface } from "@/settings/surface"
 
 export function formatCompact(num: number): string {
@@ -26,6 +27,7 @@ export function SessionContextUsageWidget(props: { sessionID?: string }) {
   const data = useData()
   const language = useLanguage()
   const surface = useSettingsSurface()
+  const dialog = useDialog()
 
   let buttonRef: HTMLButtonElement | undefined
   let popupRef: HTMLDivElement | undefined
@@ -393,6 +395,29 @@ export function SessionContextUsageWidget(props: { sessionID?: string }) {
                   </div>
                 </div>
               </Show>
+            </div>
+
+            {/* Memória Progressiva Section */}
+            <div class="flex items-center justify-between pt-1.5 border-t border-v2-border-border-base/60">
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs font-semibold text-v2-text-text-base">Memória Progressiva</span>
+                <span class="text-[9px] px-1.5 py-0.2 rounded bg-teal-500/10 text-teal-300 font-mono border border-teal-500/20">
+                  NCM 2.0
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  setOpen(false)
+                  const { DialogProgressiveMemory } = await import("./dialog-progressive-memory")
+                  void dialog.show((p) => <DialogProgressiveMemory onClose={p.close} />)
+                }}
+                class="px-2 py-0.5 text-[10px] font-medium rounded-md transition-colors border bg-v2-background-bg-layer-02 text-v2-text-text-muted hover:text-teal-300 hover:border-teal-500/30 inline-flex items-center gap-1"
+                title="Visualizar e gerenciar memórias consolidadas"
+              >
+                <Icon name="archive" size="small" />
+                <span>Gerenciar</span>
+              </button>
             </div>
 
             {/* Ajustar janela Section */}

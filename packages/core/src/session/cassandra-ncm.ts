@@ -3,6 +3,7 @@ export * as CassandraNCM from "./cassandra-ncm.js"
 import * as fs from "node:fs"
 import * as path from "node:path"
 import type { SessionMessage } from "./message.js"
+import { ProgressiveMemory } from "./progressive-memory.js"
 
 export interface GroundTruthItem {
   readonly path: string
@@ -337,6 +338,13 @@ export function generateBlueprint(options: BlueprintOptions): string {
   lines.push("  - Rejeicao categorica de alucinacoes de estado ou caminhos inexistentes.")
   lines.push("  - Eliminacao de hesitacao deliberativa e recusas genericas.")
   lines.push("  - Toda alegacao de conclusao deve ser respaldada por verificacao fisica no host.")
+
+  ProgressiveMemory.distillProgressiveMemory(cwd, options.messages)
+  const memoryBlock = ProgressiveMemory.formatForBlueprint(cwd)
+
+  lines.push("")
+  lines.push("5. MEMORIA PROGRESSIVA CONSOLIDADA (NCM COGNITIVE LEDGER):")
+  lines.push(memoryBlock)
   lines.push("================================================================================")
 
   return lines.join("\n")
