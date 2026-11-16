@@ -649,6 +649,8 @@ export function DialogSelectModel(props: { provider?: string; model?: ModelState
 
   // `navigated`: the arrows have moved through the results since the query last changed.
   const [query, setQuery] = createStore({ search: "", navigated: false })
+  type RailTab = "recent" | "favorites" | "all" | "custom" | "ollama" | "other"
+  const [railTab, setRailTab] = createSignal<RailTab>("all")
   const [flyout, setFlyout] = createSignal(createDialogFlyoutState())
   const [staged, setStaged] = createStore<Record<string, string | null>>({})
 
@@ -663,12 +665,30 @@ export function DialogSelectModel(props: { provider?: string; model?: ModelState
 
     if (query.search.trim()) return providers
 
-    return withSections({
+    const allWithSections = withSections({
       groups: providers,
       favorites: controller.favorites(),
       recent: controller.recent(),
       titles: { favorite: language.t("dialog.model.favorites"), recent: language.t("dialog.model.recent") },
     })
+
+    if (railTab() === "favorites") {
+      return allWithSections.filter((g) => g.title === language.t("dialog.model.favorites") || g.category === "favorite")
+    }
+    if (railTab() === "recent") {
+      return allWithSections.filter((g) => g.title === language.t("dialog.model.recent") || g.category === "recent")
+    }
+    if (railTab() === "custom") {
+      return providers.filter((g) => !popularProviders.includes(g.category) && !g.category.toLowerCase().includes("ollama"))
+    }
+    if (railTab() === "ollama") {
+      return providers.filter((g) => g.category.toLowerCase().includes("ollama"))
+    }
+    if (railTab() === "other") {
+      return providers.filter((g) => !popularProviders.includes(g.category))
+    }
+
+    return allWithSections
   })
 
   const rows = createMemo(() =>
@@ -960,6 +980,9 @@ export function DialogSelectModel(props: { provider?: string; model?: ModelState
           <span class="min-w-0 truncate">
             <SearchHighlight text={item().name} />
           </span>
+          <Show when={favorite(item())}>
+            <span class="text-amber-400 text-xs shrink-0">★</span>
+          </Show>
           {/* Favorites and Recent mix providers, so their rows name one, with its workspace when its header has one. */}
           <Show when={row.model.group.title}>
             <span class="min-w-0 shrink-[999] truncate text-v2-text-text-faint">{labels.name(item().provider)}</span>
@@ -975,6 +998,7 @@ export function DialogSelectModel(props: { provider?: string; model?: ModelState
           </Show>
         </span>
         <Show when={usage(item())}>{(value) => <ModelUsageTag usage={value()} />}</Show>
+        <span class="text-xs font-serif text-v2-text-text-muted px-1.5 shrink-0 opacity-70 ml-auto" title="Code Nexus Pi Model">π</span>
         <Show when={active()}>
           <span data-slot="model-dialog-variant">
             <span class="truncate capitalize">{variant(item()) ?? language.t("common.default")}</span>
@@ -986,76 +1010,138 @@ export function DialogSelectModel(props: { provider?: string; model?: ModelState
   }
 
   return (
-    <Dialog class="command-palette model-dialog" size="large">
+    <Dialog class="command-palette model-dialog !max-w-[500px] !w-[500px]" size="large">
       <div class="sr-only">
         <DialogTitle>{language.t("dialog.model.select.title")}</DialogTitle>
       </div>
-      <DialogBody class="command-palette-body">
-        {/* Scrolling moves the flyout's row away without a pointer event, which would leave it detached. */}
-        <div
-          class="contents"
-          ref={(element) => {
-            scroller = element
-            createEventListener(
-              element,
-              "scroll",
-              () => {
-                follow()
-                fadeHeaders()
-              },
-              { capture: true },
-            )
-            // A wheel scroll is the pointer's, so the highlight and flyout follow the row under it.
-            createEventListener(element, "wheel", () => dispatch({ type: "wheel" }), { passive: true })
-          }}
-        >
-          <SearchList
-            ref={(handle) => (list = handle)}
-            query={query.search}
-            onQuery={setSearch}
-            placeholder={language.t("dialog.model.search.placeholder")}
-            trailing={
-              <>
-                <Tooltip
-                  placement="top"
-                  gutter={4}
-                  value={language.t("command.provider.connect")}
-                  ignoreSafeArea={false}
-                >
-                  <IconButton
-                    variant="ghost-muted"
-                    icon={<Icon name="plus" size="small" />}
-                    aria-label={language.t("command.provider.connect")}
-                    onClick={connect}
-                  />
-                </Tooltip>
-                <Tooltip placement="top" gutter={4} value={language.t("dialog.model.manage")} ignoreSafeArea={false}>
-                  <IconButton
-                    variant="ghost-muted"
-                    icon={<Icon name="outline-sliders" size="small" />}
-                    aria-label={language.t("dialog.model.manage")}
-                    onClick={manage}
-                  />
-                </Tooltip>
-              </>
-            }
-            items={rows()}
-            key={(row) => row.id}
-            section={(row) => row.group.category}
-            header={(row) => (
-              <span data-slot="model-dialog-header-label" class="flex min-w-0 items-center gap-1.5">
-                <span class="min-w-0 truncate">{row.group.title ?? labels.name(row.item.provider)}</span>
-                <Show when={!row.group.title && labels.workspace(row.item.provider)}>
-                  {(workspace) => <Badge class="shrink-0">{workspace()}</Badge>}
-                </Show>
-              </span>
-            )}
-            empty={language.t("dialog.model.empty")}
-            onSelect={(row) => choose(row.item)}
-            onKeyDown={onKeyDown}
+      <DialogBody class="command-palette-body !p-0 flex flex-col overflow-hidden">
+        <div class="flex flex-1 min-h-[380px] overflow-hidden">
+          {/* Left Navigation Rail (Cindy Reference) */}
+          <div class="w-12 shrink-0 border-r border-v2-border-border-base flex flex-col items-center py-2.5 gap-2 bg-v2-background-bg-layer-01/80 select-none">
+            <button
+              type="button"
+              onClick={() => setRailTab("recent")}
+              class={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${railTab() === "recent" ? "bg-v2-background-bg-layer-03 text-v2-text-text-base shadow-xs" : "text-v2-icon-icon-muted hover:text-v2-text-text-base hover:bg-v2-background-bg-layer-02"}`}
+              title="Recentes"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setRailTab("favorites")}
+              class={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${railTab() === "favorites" ? "bg-v2-background-bg-layer-03 text-amber-400 shadow-xs" : "text-v2-icon-icon-muted hover:text-amber-400 hover:bg-v2-background-bg-layer-02"}`}
+              title="Favoritos"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setRailTab("all")}
+              class={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${railTab() === "all" ? "bg-white text-zinc-900 shadow-xs font-bold" : "text-v2-icon-icon-muted hover:text-v2-text-text-base hover:bg-v2-background-bg-layer-02"}`}
+              title="Todos os modelos"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1" />
+                <rect x="14" y="3" width="7" height="7" rx="1" />
+                <rect x="14" y="14" width="7" height="7" rx="1" />
+                <rect x="3" y="14" width="7" height="7" rx="1" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setRailTab("custom")}
+              class={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${railTab() === "custom" ? "bg-v2-background-bg-layer-03 text-teal-400 shadow-xs" : "text-v2-icon-icon-muted hover:text-teal-300 hover:bg-v2-background-bg-layer-02"}`}
+              title="Provedores Personalizados"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" y1="3" x2="6" y2="15" />
+                <circle cx="18" cy="6" r="3" />
+                <circle cx="6" cy="18" r="3" />
+                <path d="M18 9a9 9 0 0 1-9 9" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setRailTab("ollama")}
+              class={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${railTab() === "ollama" ? "bg-v2-background-bg-layer-03 text-v2-text-text-base shadow-xs" : "text-v2-icon-icon-muted hover:text-v2-text-text-base hover:bg-v2-background-bg-layer-02"}`}
+              title="Ollama / Local"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="3" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setRailTab("other")}
+              class={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${railTab() === "other" ? "bg-v2-background-bg-layer-03 text-v2-text-text-base shadow-xs" : "text-v2-icon-icon-muted hover:text-v2-text-text-base hover:bg-v2-background-bg-layer-02"}`}
+              title="Outros / CLI"
+            >
+              <span class="w-4 h-4 flex items-center justify-center text-xs font-mono font-bold">T</span>
+            </button>
+          </div>
+
+          {/* Right Area: SearchList */}
+          <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+            {/* Scrolling moves the flyout's row away without a pointer event, which would leave it detached. */}
+            <div
+              class="contents"
+              ref={(element) => {
+                scroller = element
+                createEventListener(
+                  element,
+                  "scroll",
+                  () => {
+                    follow()
+                    fadeHeaders()
+                  },
+                  { capture: true },
+                )
+                // A wheel scroll is the pointer's, so the highlight and flyout follow the row under it.
+                createEventListener(element, "wheel", () => dispatch({ type: "wheel" }), { passive: true })
+              }}
+            >
+              <SearchList
+                ref={(handle) => (list = handle)}
+                query={query.search}
+                onQuery={setSearch}
+                placeholder="Buscar modelos..."
+                items={rows()}
+                key={(row) => row.id}
+                section={(row) => row.group.category}
+                header={(row) => (
+                  <span data-slot="model-dialog-header-label" class="flex min-w-0 items-center gap-1.5 font-medium text-xs">
+                    <span class="min-w-0 truncate">{row.group.title ?? labels.name(row.item.provider)}</span>
+                    <Show when={!row.group.title && labels.workspace(row.item.provider)}>
+                      {(workspace) => <Badge class="shrink-0">{workspace()}</Badge>}
+                    </Show>
+                  </span>
+                )}
+                empty={language.t("dialog.model.empty")}
+                onSelect={(row) => choose(row.item)}
+                onKeyDown={onKeyDown}
+              >
+                {(row, attrs) => <Row model={row()} attrs={attrs} />}
+              </SearchList>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer: + Configurar modelos (Cindy Reference) */}
+        <div class="border-t border-v2-border-border-base px-3.5 py-2.5 flex items-center justify-between text-xs text-v2-text-text-muted bg-v2-background-bg-layer-01/80">
+          <button
+            type="button"
+            onClick={manage}
+            class="hover:text-v2-text-text-base flex items-center gap-1.5 font-medium transition-colors"
           >
-            {(row, attrs) => <Row model={row()} attrs={attrs} />}
-          </SearchList>
+            <span class="text-sm font-bold">+</span>
+            <span>Configurar modelos</span>
+          </button>
         </div>
         <Show when={chatgptPlan()}>
           <ChatgptPlanFooter />

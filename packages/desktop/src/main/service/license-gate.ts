@@ -717,9 +717,44 @@ export function registerLicenseManagement(): void {
     ipcMain.removeHandler(THEME_GET_CHANNEL)
     ipcMain.removeHandler(THEME_SET_CHANNEL)
     ipcMain.removeHandler(BACKDROP_CHANNEL)
+    ipcMain.removeHandler("code-nexus:custom-provider-save")
   } catch {
     /* no prior handler */
   }
+
+  // Custom provider persistence to global opencode.jsonc
+  ipcMain.handle("code-nexus:custom-provider-save", async (_e, data: any) => {
+    try {
+      if (!data || !data.id || !data.baseURL) return { ok: false, error: "Dados inválidos: ID e URL base são obrigatórios." }
+      const configDir = path.join(os.homedir(), ".config", "opencode")
+      fs.mkdirSync(configDir, { recursive: true })
+      const configPath = path.join(configDir, "opencode.jsonc")
+      let content: any = {}
+      if (fs.existsSync(configPath)) {
+        try {
+          const raw = fs.readFileSync(configPath, "utf-8")
+          content = JSON.parse(raw)
+        } catch {
+          content = {}
+        }
+      }
+      if (!content.provider) content.provider = {}
+      content.provider[data.id] = {
+        name: data.name || data.id,
+        npm: data.npm || "@ai-sdk/openai",
+        options: {
+          baseURL: data.baseURL,
+          apiKey: data.apiKey || undefined,
+          headers: data.headers || undefined,
+        },
+        models: data.models || {},
+      }
+      fs.writeFileSync(configPath, JSON.stringify(content, null, 2), "utf-8")
+      return { ok: true }
+    } catch (err: any) {
+      return { ok: false, error: err?.message || String(err) }
+    }
+  })
 
   // Theme persistence. Writes a tiny `{ "id": "<kit>" }` JSON to
   // <XDG_DATA_HOME or ~/.local/share>/opencode/theme.json. Kept in the main

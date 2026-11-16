@@ -165,12 +165,14 @@ export async function applyWallpaper(mode: ClearSettings["wallpaper"], force = f
   if (mode !== "custom") {
     root.style.removeProperty("--wallpaper")
     root.dataset.wallpaper = "none"
+    root.removeAttribute("data-has-wallpaper")
     void updateContrast()
     return
   }
   if (objectUrl && !force) {
     root.style.setProperty("--wallpaper", `url("${objectUrl}")`)
-    root.removeAttribute("data-wallpaper")
+    root.dataset.wallpaper = "custom"
+    root.dataset.hasWallpaper = "true"
     void updateContrast()
     return
   }
@@ -178,11 +180,13 @@ export async function applyWallpaper(mode: ClearSettings["wallpaper"], force = f
   if (!url) {
     root.style.removeProperty("--wallpaper")
     root.dataset.wallpaper = "none"
+    root.removeAttribute("data-has-wallpaper")
     void updateContrast()
     return
   }
   root.style.setProperty("--wallpaper", `url("${url}")`)
-  root.removeAttribute("data-wallpaper")
+  root.dataset.wallpaper = "custom"
+  root.dataset.hasWallpaper = "true"
   void updateContrast()
 }
 
@@ -331,9 +335,13 @@ export function clearClear() {
   root.style.removeProperty("--kit-accent")
   root.style.removeProperty("--kit-accent-hover")
   root.style.removeProperty("--v2-accent")
-  root.style.removeProperty("--wallpaper")
-  root.removeAttribute("data-wallpaper")
-  flush()
+  const settings = readClear()
+  if (settings.wallpaper !== "custom") {
+    root.style.removeProperty("--wallpaper")
+    root.removeAttribute("data-wallpaper")
+    root.removeAttribute("data-has-wallpaper")
+    flush()
+  }
 }
 
 export function saveClear(settings: ClearSettings) {
@@ -342,9 +350,8 @@ export function saveClear(settings: ClearSettings) {
   } catch {
     /* Storage is optional; the inline properties still apply this session. */
   }
-  // The glass variables belong to the Clear kit. Saving a wallpaper while a
-  // different theme is active must not overwrite that theme's accent or glass
-  // tokens; the theme provider applies the saved values when Clear is chosen.
+  // Always apply wallpaper mode so custom background works universally across all themes
+  void applyWallpaper(settings.wallpaper)
   if (typeof document === "undefined" || document.documentElement.dataset.codeNexusTheme === "clear") {
     applyClear(settings)
   }

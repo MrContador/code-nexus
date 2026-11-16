@@ -113,19 +113,28 @@ export function CustomProviderForm(props: {
         newErrors.id = language.t("provider.custom.error.idRequired") ?? "ID do provedor é obrigatório"
       }
     }
-    if (modelRows().length === 0) {
-      newErrors.models = language.t("provider.custom.error.atLeastOneModel") ?? "Adicione pelo menos um modelo"
-      setShowManualModels(true)
+
+    // Filter out completely blank rows
+    const activeRows = modelRows().filter((m) => m.id.trim())
+    if (activeRows.length === 0) {
+      newErrors.models = language.t("provider.custom.error.atLeastOneModel") ?? "Adicione ou selecione pelo menos um modelo"
     }
     
-    for (let i = 0; i < modelRows().length; i++) {
-      const model = modelRows()[i]
-      if (!model.id.trim()) newErrors[`modelId_${i}`] = language.t("provider.custom.error.modelIdRequired", { index: i + 1 }) ?? `ID do modelo ${i + 1} é obrigatório`
-      if (!model.name.trim()) newErrors[`modelName_${i}`] = language.t("provider.custom.error.modelNameRequired", { index: i + 1 }) ?? `Nome do modelo ${i + 1} é obrigatório`
+    for (let i = 0; i < activeRows.length; i++) {
+      const model = activeRows[i]
+      if (!model.id.trim()) newErrors[`modelId_${i}`] = `ID do modelo ${i + 1} é obrigatório`
+      if (!model.name.trim()) {
+        model.name = model.id.trim()
+      }
     }
     
     setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    const isValid = Object.keys(newErrors).length === 0
+    if (!isValid) {
+      const firstError = Object.values(newErrors)[0]
+      if (firstError) showToast(firstError)
+    }
+    return isValid
   }
 
   const handleSave = async () => {
@@ -134,18 +143,19 @@ export function CustomProviderForm(props: {
     setSaving(true)
     try {
       const cleanBaseURL = normalizeBaseURL(store.baseURL)
+      const validRows = modelRows().filter((m) => m.id.trim())
       const data: CustomProviderFormData = {
         ...store,
         baseURL: cleanBaseURL,
         id: store.id.trim() || store.name.trim().toLowerCase().replace(/[^a-z0-9-]/g, "-"),
         models: Object.fromEntries(
-          modelRows().map((m) => [m.id, { name: m.name, limit: { context: m.context, output: m.output } }])
+          validRows.map((m) => [m.id.trim(), { name: m.name.trim() || m.id.trim(), limit: { context: m.context || 128000, output: m.output || 8192 } }])
         ),
       }
       
       // Clear draft
       localStorage.removeItem(CUSTOM_PROVIDER_PERSIST_KEY)
-      props.onSave(data)
+      await props.onSave(data)
     } catch (error) {
       showToast(formatServerError(error))
     } finally {
@@ -249,8 +259,8 @@ export function CustomProviderForm(props: {
   const isModelSelected = (id: string) => modelRows().some((m) => m.id === id)
 
   const toggleSelectModel = (id: string) => {
-    const current = modelRows()
-    if (isModelSelected(id)) {
+    const current = modelRows().filter((m) => m.id.trim())
+    if (current.some((m) => m.id === id)) {
       setModelRows(current.filter((m) => m.id !== id))
     } else {
       setModelRows([...current, { id, name: id, context: 128000, output: 8192 }])
@@ -258,7 +268,7 @@ export function CustomProviderForm(props: {
   }
 
   const selectAllDiscovered = () => {
-    const current = modelRows()
+    const current = modelRows().filter((m) => m.id.trim())
     const existing = new Set(current.map((m) => m.id))
     const toAdd = discoveredModels().filter((id) => !existing.has(id)).map((id) => ({
       id,
@@ -270,9 +280,7 @@ export function CustomProviderForm(props: {
   }
 
   onMount(() => {
-    if (modelRows().length === 0) {
-      addModelRow()
-    }
+    // Only add a row if manually opened and empty
   })
 
   return (
@@ -370,7 +378,7 @@ export function CustomProviderForm(props: {
               <div class="flex items-center justify-between gap-2">
                 <span class="text-xs text-v2-text-text-muted">
                   {discoveredModels().length > 0
-                    ? `${discoveredModels().length} modelos encontrados (${modelRows().length} selecionados)`
+                    ? `${discoveredModels().length} modelos encontrados (${modelRows().filter(m => m.id.trim()).length} selecionados)`
                     : "A lista de modelos ainda não foi buscada"}
                 </span>
                 <Button
@@ -431,7 +439,7 @@ export function CustomProviderForm(props: {
               >
                 <Icon name="chevron-down" size="small" class={`transition-transform ${showManualModels() ? "rotate-180" : ""}`} />
                 <span>Adicionar um modelo manualmente</span>
-                <span class="text-[11px] text-v2-text-text-muted font-normal ml-auto">({modelRows().length} ativos)</span>
+                <span class="text-[11px] text-v2-text-text-muted font-normal ml-auto">({modelRows().filter(m => m.id.trim()).length} ativos)</span>
               </button>
 
               <Show when={showManualModels()}>

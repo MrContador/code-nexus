@@ -374,8 +374,13 @@ export const OPEN_SKILLS_CATALOG: HubSkillItem[] = [
 ]
 
 export function SkillHubManager(props: { installedSkills?: Array<{ name: string; path?: string }> }) {
+  type SkillTab = "standard" | "installed" | "marketplace"
+  type SortOption = "top_rated" | "popular" | "alpha"
+
+  const [currentTab, setCurrentTab] = createSignal<SkillTab>("marketplace")
   const [filter, setFilter] = createSignal("")
   const [activeCategory, setActiveCategory] = createSignal<string>("all")
+  const [sortBy, setSortBy] = createSignal<SortOption>("top_rated")
 
   const getInitialSet = (): Set<string> => {
     const s = new Set<string>()
@@ -437,13 +442,19 @@ export function SkillHubManager(props: { installedSkills?: Array<{ name: string;
     }, 400)
   }
 
-  const filteredCatalog = createMemo(() => {
+  const installedCount = createMemo(() => {
+    let count = 0
+    OPEN_SKILLS_CATALOG.forEach((item) => {
+      if (isInstalled(item.name)) count++
+    })
+    return count
+  })
+
+  const standardSkills = createMemo(() => {
     const q = filter().toLowerCase().trim()
     const cat = activeCategory()
-
     return OPEN_SKILLS_CATALOG.filter((item) => {
-      if (cat === "installed" && !isInstalled(item.name)) return false
-      if (cat !== "all" && cat !== "installed" && item.category !== cat) return false
+      if (cat !== "all" && item.category !== cat) return false
       if (!q) return true
       return (
         item.name.toLowerCase().includes(q) ||
@@ -454,212 +465,555 @@ export function SkillHubManager(props: { installedSkills?: Array<{ name: string;
     })
   })
 
-  const installedCount = createMemo(() => {
-    let count = 0
-    OPEN_SKILLS_CATALOG.forEach((item) => {
-      if (isInstalled(item.name)) count++
+  const installedSkillsList = createMemo(() => {
+    const q = filter().toLowerCase().trim()
+    return OPEN_SKILLS_CATALOG.filter((item) => {
+      if (!isInstalled(item.name)) return false
+      if (!q) return true
+      return (
+        item.name.toLowerCase().includes(q) ||
+        item.displayName.toLowerCase().includes(q) ||
+        item.description.toLowerCase().includes(q)
+      )
     })
-    return count
+  })
+
+  const marketplaceCatalog = createMemo(() => {
+    const q = filter().toLowerCase().trim()
+    const cat = activeCategory()
+    const list = OPEN_SKILLS_CATALOG.filter((item) => {
+      if (cat !== "all" && item.category !== cat) return false
+      if (!q) return true
+      return (
+        item.name.toLowerCase().includes(q) ||
+        item.displayName.toLowerCase().includes(q) ||
+        item.description.toLowerCase().includes(q) ||
+        item.tags.some((t) => t.toLowerCase().includes(q))
+      )
+    })
+
+    const sorted = [...list]
+    if (sortBy() === "alpha") {
+      sorted.sort((a, b) => a.displayName.localeCompare(b.displayName))
+    } else if (sortBy() === "popular") {
+      sorted.sort((a, b) => b.displayName.length - a.displayName.length)
+    } else {
+      // top_rated default
+      sorted.sort((a, b) => a.name.localeCompare(b.name))
+    }
+    return sorted
   })
 
   return (
-    <div class="flex flex-col gap-6 text-v2-text-text-base">
-      {/* Banner / Hero Card */}
-      <div class="rounded-2xl border border-teal-500/30 bg-gradient-to-r from-teal-950/40 via-v2-background-bg-layer-02 to-v2-background-bg-layer-01 p-6 relative overflow-hidden shadow-lg">
-        <div class="absolute -right-12 -top-12 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-5 relative z-10">
-          <div class="flex flex-col gap-2 max-w-2xl">
-            <div class="inline-flex items-center gap-2">
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase bg-teal-500/20 text-teal-300 border border-teal-500/30">
-                biSkills · open-skills
-              </span>
-              <span class="text-xs text-v2-text-text-muted">SkillHub Oficial</span>
-            </div>
-            <h3 class="text-xl font-bold tracking-tight text-v2-text-text-base">
-              Gerencie suas Skills ou descubra no SkillHub
-            </h3>
-            <p class="text-xs text-v2-text-text-muted leading-relaxed">
-              Expanda o repertório dos agentes do Code Nexus com pacotes especializados de UI, linguagens, engenharia reversa e automações completas prontas para uso.
+    <div class="flex flex-col gap-6 text-v2-text-text-base pt-2">
+      {/* 3 Main Tabs: [ CodeNexus Padrão | Skills Instaladas | Skills Marketplace ] */}
+      <div class="flex items-center justify-between border-b border-v2-border-border-base pb-3">
+        <div class="inline-flex rounded-xl bg-v2-background-bg-layer-02 p-1 border border-v2-border-border-base text-xs font-medium">
+          <button
+            type="button"
+            onClick={() => {
+              setCurrentTab("standard")
+              setFilter("")
+            }}
+            class={`px-4 py-1.5 rounded-lg transition-colors flex items-center gap-2 ${
+              currentTab() === "standard"
+                ? "bg-v2-background-bg-inverse text-v2-text-text-inverse font-semibold shadow-xs"
+                : "text-v2-text-text-muted hover:text-v2-text-text-base"
+            }`}
+          >
+            <span>CodeNexus Padrão</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-white/10 opacity-80">
+              {OPEN_SKILLS_CATALOG.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setCurrentTab("installed")
+              setFilter("")
+            }}
+            class={`px-4 py-1.5 rounded-lg transition-colors flex items-center gap-2 ${
+              currentTab() === "installed"
+                ? "bg-v2-background-bg-inverse text-v2-text-text-inverse font-semibold shadow-xs"
+                : "text-v2-text-text-muted hover:text-v2-text-text-base"
+            }`}
+          >
+            <span>Skills Instaladas</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-teal-500/20 text-teal-300 font-bold">
+              {installedCount()}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setCurrentTab("marketplace")
+              setFilter("")
+            }}
+            class={`px-4 py-1.5 rounded-lg transition-colors flex items-center gap-2 ${
+              currentTab() === "marketplace"
+                ? "bg-teal-600 text-white font-semibold shadow-xs"
+                : "text-v2-text-text-muted hover:text-teal-300"
+            }`}
+          >
+            <span>Skills Marketplace</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20">biSkills</span>
+          </button>
+        </div>
+
+        <a
+          href="https://github.com/x7dl8p/open-skills"
+          target="_blank"
+          rel="noreferrer"
+          class="text-xs text-v2-text-text-muted hover:text-teal-300 transition-colors inline-flex items-center gap-1 font-mono"
+        >
+          <span>github.com/x7dl8p/open-skills</span>
+          <span class="text-[10px]">↗</span>
+        </a>
+      </div>
+
+      {/* Tab 1: CodeNexus Padrão */}
+      <Show when={currentTab() === "standard"}>
+        <div class="flex flex-col gap-4">
+          <div class="flex flex-col gap-1">
+            <h3 class="text-base font-bold text-v2-text-text-base">CodeNexus Padrão</h3>
+            <p class="text-xs text-v2-text-text-muted">
+              Conjunto essencial de skills integradas ao Code Nexus. Disponíveis nativamente para todos os agentes locais e remotos.
             </p>
           </div>
 
-          <div class="flex items-center gap-3 shrink-0">
-            <Button
-              type="button"
-              variant="primary"
-              disabled={installingAll()}
-              onClick={installFullPack}
-              class="px-4 py-2 text-xs font-semibold shadow-md bg-teal-600 hover:bg-teal-500 text-white gap-2"
-            >
-              <Icon name="download" size="small" />
-              <span>{installingAll() ? "Instalando..." : "Instalar pacote completo"}</span>
-            </Button>
-            <a
-              href="https://github.com/x7dl8p/open-skills"
-              target="_blank"
-              rel="noreferrer"
-              class="px-3.5 py-2 text-xs font-medium rounded-lg border border-v2-border-border-base bg-v2-background-bg-layer-02 hover:bg-v2-background-bg-layer-03 text-v2-text-text-base transition-colors inline-flex items-center gap-1.5"
-            >
-              <span>GitHub</span>
-              <span class="text-xs">↗</span>
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* Filter & Search Bar */}
-      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div class="inline-flex rounded-lg bg-v2-background-bg-layer-02 p-1 border border-v2-border-border-base text-xs">
-          <button
-            type="button"
-            onClick={() => setActiveCategory("all")}
-            class={`px-3 py-1 rounded-md font-medium transition-colors ${
-              activeCategory() === "all"
-                ? "bg-v2-background-bg-inverse text-v2-text-text-inverse shadow-xs"
-                : "text-v2-text-text-muted hover:text-v2-text-text-base"
-            }`}
-          >
-            Todas ({OPEN_SKILLS_CATALOG.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveCategory("installed")}
-            class={`px-3 py-1 rounded-md font-medium transition-colors ${
-              activeCategory() === "installed"
-                ? "bg-v2-background-bg-inverse text-v2-text-text-inverse shadow-xs"
-                : "text-v2-text-text-muted hover:text-v2-text-text-base"
-            }`}
-          >
-            Instaladas ({installedCount()})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveCategory("design")}
-            class={`px-3 py-1 rounded-md font-medium transition-colors ${
-              activeCategory() === "design"
-                ? "bg-v2-background-bg-inverse text-v2-text-text-inverse shadow-xs"
-                : "text-v2-text-text-muted hover:text-v2-text-text-base"
-            }`}
-          >
-            UI / Design
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveCategory("languages")}
-            class={`px-3 py-1 rounded-md font-medium transition-colors ${
-              activeCategory() === "languages"
-                ? "bg-v2-background-bg-inverse text-v2-text-text-inverse shadow-xs"
-                : "text-v2-text-text-muted hover:text-v2-text-text-base"
-            }`}
-          >
-            Linguagens
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveCategory("engineering")}
-            class={`px-3 py-1 rounded-md font-medium transition-colors ${
-              activeCategory() === "engineering"
-                ? "bg-v2-background-bg-inverse text-v2-text-text-inverse shadow-xs"
-                : "text-v2-text-text-muted hover:text-v2-text-text-base"
-            }`}
-          >
-            Engenharia
-          </button>
-        </div>
-
-        {/* Search */}
-        <div class="relative w-full sm:w-72">
-          <input
-            type="text"
-            value={filter()}
-            onInput={(e) => setFilter(e.currentTarget.value)}
-            placeholder="Pesquisar no SkillHub..."
-            class="w-full px-3 py-1.5 pl-8 text-xs bg-v2-background-bg-layer-02 border border-v2-border-border-base rounded-lg text-v2-text-text-base placeholder:text-v2-text-text-muted focus:outline-none focus:border-teal-500 transition-colors"
-          />
-          <div class="absolute left-2.5 top-1/2 -translate-y-1/2 text-v2-icon-icon-muted pointer-events-none">
-            <Icon name="magnifying-glass" size="small" />
-          </div>
-        </div>
-      </div>
-
-      {/* Skills Grid */}
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-        <For
-          each={filteredCatalog()}
-          fallback={
-            <div class="col-span-full py-12 text-center text-v2-text-text-muted text-xs">
-              Nenhuma skill encontrada para o filtro atual.
+          {/* Filter & Search Bar */}
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div class="inline-flex rounded-lg bg-v2-background-bg-layer-02 p-1 border border-v2-border-border-base text-xs">
+              <button
+                type="button"
+                onClick={() => setActiveCategory("all")}
+                class={`px-3 py-1 rounded-md font-medium transition-colors ${
+                  activeCategory() === "all"
+                    ? "bg-v2-background-bg-inverse text-v2-text-text-inverse shadow-xs"
+                    : "text-v2-text-text-muted hover:text-v2-text-text-base"
+                }`}
+              >
+                Todas ({OPEN_SKILLS_CATALOG.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveCategory("design")}
+                class={`px-3 py-1 rounded-md font-medium transition-colors ${
+                  activeCategory() === "design"
+                    ? "bg-v2-background-bg-inverse text-v2-text-text-inverse shadow-xs"
+                    : "text-v2-text-text-muted hover:text-v2-text-text-base"
+                }`}
+              >
+                UI / Design
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveCategory("languages")}
+                class={`px-3 py-1 rounded-md font-medium transition-colors ${
+                  activeCategory() === "languages"
+                    ? "bg-v2-background-bg-inverse text-v2-text-text-inverse shadow-xs"
+                    : "text-v2-text-text-muted hover:text-v2-text-text-base"
+                }`}
+              >
+                Linguagens
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveCategory("engineering")}
+                class={`px-3 py-1 rounded-md font-medium transition-colors ${
+                  activeCategory() === "engineering"
+                    ? "bg-v2-background-bg-inverse text-v2-text-text-inverse shadow-xs"
+                    : "text-v2-text-text-muted hover:text-v2-text-text-base"
+                }`}
+              >
+                Engenharia
+              </button>
             </div>
-          }
-        >
-          {(skill) => {
-            const installed = () => isInstalled(skill.name)
 
-            return (
-              <div class="rounded-xl border border-v2-border-border-base bg-v2-background-bg-layer-01/80 hover:border-v2-border-border-hover p-4 flex flex-col justify-between gap-3 transition-all duration-150 hover:shadow-md">
-                <div class="flex flex-col gap-2">
-                  <div class="flex items-start justify-between gap-2">
-                    <div class="flex items-center gap-2">
-                      <div class="w-8 h-8 rounded-lg bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 shrink-0">
-                        <Icon name="post-skill" size="small" />
+            <div class="relative w-full sm:w-72">
+              <input
+                type="text"
+                value={filter()}
+                onInput={(e) => setFilter(e.currentTarget.value)}
+                placeholder="Filtrar skills padrão..."
+                class="w-full px-3 py-1.5 pl-8 text-xs bg-v2-background-bg-layer-02 border border-v2-border-border-base rounded-lg text-v2-text-text-base placeholder:text-v2-text-text-muted focus:outline-none focus:border-teal-500 transition-colors"
+              />
+              <div class="absolute left-2.5 top-1/2 -translate-y-1/2 text-v2-icon-icon-muted pointer-events-none">
+                <Icon name="magnifying-glass" size="small" />
+              </div>
+            </div>
+          </div>
+
+          {/* Cards Grid */}
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            <For each={standardSkills()}>
+              {(skill) => (
+                <div class="rounded-xl border border-v2-border-border-base bg-v2-background-bg-layer-01/80 p-4 flex flex-col justify-between gap-3 hover:border-v2-border-border-hover transition-colors">
+                  <div class="flex flex-col gap-2">
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 shrink-0">
+                          <Icon name="post-skill" size="small" />
+                        </div>
+                        <div class="flex flex-col min-w-0">
+                          <h4 class="text-xs font-bold text-v2-text-text-base truncate">{skill.displayName}</h4>
+                          <span class="text-[10px] font-mono text-v2-text-text-muted">{skill.name}</span>
+                        </div>
                       </div>
-                      <div class="flex flex-col min-w-0">
-                        <h4 class="text-xs font-bold text-v2-text-text-base truncate">{skill.displayName}</h4>
-                        <span class="text-[10px] font-mono text-v2-text-text-muted">{skill.name}</span>
+                      <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        Padrão
+                      </span>
+                    </div>
+
+                    <p class="text-[11px] text-v2-text-text-muted leading-relaxed line-clamp-2">
+                      {skill.description}
+                    </p>
+
+                    <div class="flex flex-wrap gap-1 pt-1">
+                      <For each={skill.tags.slice(0, 3)}>
+                        {(tag) => (
+                          <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-v2-background-bg-layer-02 text-v2-text-text-muted border border-white/5">
+                            #{tag}
+                          </span>
+                        )}
+                      </For>
+                    </div>
+                  </div>
+
+                  <div class="pt-2 border-t border-v2-border-border-base/40 flex items-center justify-between text-[10px] text-v2-text-text-muted">
+                    <span class="font-mono uppercase">{skill.category}</span>
+                    <span class="text-emerald-400 font-medium">Pronta para uso</span>
+                  </div>
+                </div>
+              )}
+            </For>
+          </div>
+        </div>
+      </Show>
+
+      {/* Tab 2: Skills Instaladas */}
+      <Show when={currentTab() === "installed"}>
+        <div class="flex flex-col gap-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex flex-col gap-1">
+              <h3 class="text-base font-bold text-v2-text-text-base">
+                Skills Instaladas ({installedCount()})
+              </h3>
+              <p class="text-xs text-v2-text-text-muted">
+                Skills ativas neste servidor e seus agentes. Você pode desativar ou reativar qualquer pacote a qualquer momento.
+              </p>
+            </div>
+
+            <div class="relative w-full sm:w-72">
+              <input
+                type="text"
+                value={filter()}
+                onInput={(e) => setFilter(e.currentTarget.value)}
+                placeholder="Pesquisar skills instaladas..."
+                class="w-full px-3 py-1.5 pl-8 text-xs bg-v2-background-bg-layer-02 border border-v2-border-border-base rounded-lg text-v2-text-text-base placeholder:text-v2-text-text-muted focus:outline-none focus:border-teal-500 transition-colors"
+              />
+              <div class="absolute left-2.5 top-1/2 -translate-y-1/2 text-v2-icon-icon-muted pointer-events-none">
+                <Icon name="magnifying-glass" size="small" />
+              </div>
+            </div>
+          </div>
+
+          <Show
+            when={installedSkillsList().length > 0}
+            fallback={
+              <div class="rounded-xl border border-dashed border-v2-border-border-base p-8 text-center flex flex-col items-center gap-3">
+                <div class="w-12 h-12 rounded-full bg-v2-background-bg-layer-02 flex items-center justify-center text-v2-text-text-muted">
+                  <Icon name="post-skill" size="large" />
+                </div>
+                <div class="flex flex-col gap-1">
+                  <p class="text-xs font-semibold text-v2-text-text-base">Nenhuma skill adicional instalada</p>
+                  <p class="text-[11px] text-v2-text-text-muted">Explore o Marketplace biSkills para descobrir dezenas de skills prontas.</p>
+                </div>
+                <Button variant="primary" size="small" onClick={() => setCurrentTab("marketplace")} class="gap-1.5">
+                  <Icon name="post-skill" size="small" />
+                  <span>Explorar Skills Marketplace</span>
+                </Button>
+              </div>
+            }
+          >
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              <For each={installedSkillsList()}>
+                {(skill) => (
+                  <div class="rounded-xl border border-emerald-500/30 bg-emerald-950/10 p-4 flex flex-col justify-between gap-3 hover:border-emerald-500/50 transition-colors">
+                    <div class="flex flex-col gap-2">
+                      <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                          <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+                            <Icon name="check" size="small" />
+                          </div>
+                          <div class="flex flex-col min-w-0">
+                            <h4 class="text-xs font-bold text-v2-text-text-base truncate">{skill.displayName}</h4>
+                            <span class="text-[10px] font-mono text-v2-text-text-muted">{skill.name}</span>
+                          </div>
+                        </div>
+                        <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          Instalada
+                        </span>
+                      </div>
+
+                      <p class="text-[11px] text-v2-text-text-muted leading-relaxed line-clamp-2">
+                        {skill.description}
+                      </p>
+
+                      <div class="flex items-center gap-1.5 text-[10px] font-mono text-v2-text-text-muted">
+                        <span>Local:</span>
+                        <span class="truncate bg-white/5 px-1.5 py-0.2 rounded">.agent/skills/{skill.name}</span>
                       </div>
                     </div>
 
-                    <Show
-                      when={installed()}
-                      fallback={
-                        <span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-v2-background-bg-layer-02 text-v2-text-text-muted border border-v2-border-border-base">
-                          SkillHub
-                        </span>
-                      }
-                    >
-                      <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        Ativa
+                    <div class="pt-2 border-t border-v2-border-border-base/40 flex items-center justify-between">
+                      <span class="text-[10px] font-mono text-v2-text-text-muted uppercase">
+                        {skill.category}
                       </span>
-                    </Show>
+                      <button
+                        type="button"
+                        onClick={() => toggleSkill(skill.name)}
+                        class="px-2.5 py-1 text-xs rounded-md font-medium text-rose-400 hover:bg-rose-500/10 transition-colors border border-rose-500/20"
+                      >
+                        Desinstalar
+                      </button>
+                    </div>
                   </div>
+                )}
+              </For>
+            </div>
+          </Show>
+        </div>
+      </Show>
 
-                  <p class="text-[11px] text-v2-text-text-muted leading-relaxed line-clamp-2">
-                    {skill.description}
-                  </p>
-
-                  <div class="flex flex-wrap gap-1 pt-1">
-                    <For each={skill.tags.slice(0, 3)}>
-                      {(tag) => (
-                        <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-v2-background-bg-layer-02 text-v2-text-text-muted border border-white/5">
-                          #{tag}
-                        </span>
-                      )}
-                    </For>
-                  </div>
-                </div>
-
-                <div class="pt-2 border-t border-v2-border-border-base/40 flex items-center justify-between">
-                  <span class="text-[10px] font-mono text-v2-text-text-muted uppercase">
-                    {skill.category}
+      {/* Tab 3: Skills Marketplace (open-skills & biSkills) */}
+      <Show when={currentTab() === "marketplace"}>
+        <div class="flex flex-col gap-6">
+          {/* Banner / Hero Card */}
+          <div class="rounded-2xl border border-teal-500/30 bg-gradient-to-r from-teal-950/40 via-v2-background-bg-layer-02 to-v2-background-bg-layer-01 p-6 relative overflow-hidden shadow-lg">
+            <div class="absolute -right-12 -top-12 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-5 relative z-10">
+              <div class="flex flex-col gap-2 max-w-2xl">
+                <div class="inline-flex items-center gap-2">
+                  <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider uppercase bg-teal-500/20 text-teal-300 border border-teal-500/30">
+                    biSkills · open-skills
                   </span>
+                  <span class="text-xs text-v2-text-text-muted">Marketplace Oficial</span>
+                </div>
+                <h3 class="text-xl font-bold tracking-tight text-v2-text-text-base">
+                  Skills Marketplace
+                </h3>
+                <p class="text-xs text-v2-text-text-muted leading-relaxed">
+                  Pesquise por nome, categoria, tipo e classificação. Instale pacotes modulares ou o conjunto completo diretamente do repositório <span class="font-mono text-teal-300">x7dl8p/open-skills</span> para potencializar seus agentes.
+                </p>
+              </div>
 
-                  <button
-                    type="button"
-                    onClick={() => toggleSkill(skill.name)}
-                    class={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                      installed()
-                        ? "bg-teal-500/20 text-teal-300 hover:bg-rose-500/20 hover:text-rose-300 border border-teal-500/30"
-                        : "bg-v2-background-bg-inverse text-v2-text-text-inverse hover:opacity-90 shadow-xs"
-                    }`}
-                  >
-                    {installed() ? "Instalada ✓" : "Instalar"}
-                  </button>
+              <div class="flex items-center gap-3 shrink-0">
+                <Button
+                  type="button"
+                  variant="primary"
+                  disabled={installingAll()}
+                  onClick={installFullPack}
+                  class="px-4 py-2 text-xs font-semibold shadow-md bg-teal-600 hover:bg-teal-500 text-white gap-2"
+                >
+                  <Icon name="download" size="small" />
+                  <span>{installingAll() ? "Instalando..." : "Instalar pacote completo"}</span>
+                </Button>
+                <a
+                  href="https://github.com/x7dl8p/open-skills"
+                  target="_blank"
+                  rel="noreferrer"
+                  class="px-3.5 py-2 text-xs font-medium rounded-lg border border-v2-border-border-base bg-v2-background-bg-layer-02 hover:bg-v2-background-bg-layer-03 text-v2-text-text-base transition-colors inline-flex items-center gap-1.5"
+                >
+                  <span>GitHub</span>
+                  <span class="text-xs">↗</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Search, Filter & Sorting Bar */}
+          <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+            <div class="inline-flex rounded-lg bg-v2-background-bg-layer-02 p-1 border border-v2-border-border-base text-xs">
+              <button
+                type="button"
+                onClick={() => setActiveCategory("all")}
+                class={`px-3 py-1 rounded-md font-medium transition-colors ${
+                  activeCategory() === "all"
+                    ? "bg-v2-background-bg-inverse text-v2-text-text-inverse shadow-xs"
+                    : "text-v2-text-text-muted hover:text-v2-text-text-base"
+                }`}
+              >
+                Todas ({OPEN_SKILLS_CATALOG.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveCategory("design")}
+                class={`px-3 py-1 rounded-md font-medium transition-colors ${
+                  activeCategory() === "design"
+                    ? "bg-v2-background-bg-inverse text-v2-text-text-inverse shadow-xs"
+                    : "text-v2-text-text-muted hover:text-v2-text-text-base"
+                }`}
+              >
+                UI / Design
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveCategory("languages")}
+                class={`px-3 py-1 rounded-md font-medium transition-colors ${
+                  activeCategory() === "languages"
+                    ? "bg-v2-background-bg-inverse text-v2-text-text-inverse shadow-xs"
+                    : "text-v2-text-text-muted hover:text-v2-text-text-base"
+                }`}
+              >
+                Linguagens
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveCategory("engineering")}
+                class={`px-3 py-1 rounded-md font-medium transition-colors ${
+                  activeCategory() === "engineering"
+                    ? "bg-v2-background-bg-inverse text-v2-text-text-inverse shadow-xs"
+                    : "text-v2-text-text-muted hover:text-v2-text-text-base"
+                }`}
+              >
+                Engenharia
+              </button>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <div class="inline-flex rounded-lg bg-v2-background-bg-layer-02 p-1 border border-v2-border-border-base text-xs">
+                <button
+                  type="button"
+                  onClick={() => setSortBy("top_rated")}
+                  class={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                    sortBy() === "top_rated" ? "bg-teal-500/20 text-teal-300 font-bold" : "text-v2-text-text-muted hover:text-v2-text-text-base"
+                  }`}
+                >
+                  ★ Mais aprovados
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSortBy("popular")}
+                  class={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                    sortBy() === "popular" ? "bg-teal-500/20 text-teal-300 font-bold" : "text-v2-text-text-muted hover:text-v2-text-text-base"
+                  }`}
+                >
+                  Populares
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSortBy("alpha")}
+                  class={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                    sortBy() === "alpha" ? "bg-teal-500/20 text-teal-300 font-bold" : "text-v2-text-text-muted hover:text-v2-text-text-base"
+                  }`}
+                >
+                  A-Z
+                </button>
+              </div>
+
+              <div class="relative w-full sm:w-60">
+                <input
+                  type="text"
+                  value={filter()}
+                  onInput={(e) => setFilter(e.currentTarget.value)}
+                  placeholder="Pesquisar marketplace..."
+                  class="w-full px-3 py-1.5 pl-8 text-xs bg-v2-background-bg-layer-02 border border-v2-border-border-base rounded-lg text-v2-text-text-base placeholder:text-v2-text-text-muted focus:outline-none focus:border-teal-500 transition-colors"
+                />
+                <div class="absolute left-2.5 top-1/2 -translate-y-1/2 text-v2-icon-icon-muted pointer-events-none">
+                  <Icon name="magnifying-glass" size="small" />
                 </div>
               </div>
-            )
-          }}
-        </For>
-      </div>
+            </div>
+          </div>
+
+          {/* Marketplace Grid */}
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            <For
+              each={marketplaceCatalog()}
+              fallback={
+                <div class="col-span-full py-12 text-center text-v2-text-text-muted text-xs">
+                  Nenhuma skill encontrada no Marketplace para este filtro.
+                </div>
+              }
+            >
+              {(skill) => {
+                const installed = () => isInstalled(skill.name)
+
+                return (
+                  <div class="rounded-xl border border-v2-border-border-base bg-v2-background-bg-layer-01/80 hover:border-v2-border-border-hover p-4 flex flex-col justify-between gap-3 transition-all duration-150 hover:shadow-md">
+                    <div class="flex flex-col gap-2">
+                      <div class="flex items-start justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                          <div class="w-8 h-8 rounded-lg bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 shrink-0">
+                            <Icon name="post-skill" size="small" />
+                          </div>
+                          <div class="flex flex-col min-w-0">
+                            <h4 class="text-xs font-bold text-v2-text-text-base truncate">{skill.displayName}</h4>
+                            <div class="flex items-center gap-1.5">
+                              <span class="text-[10px] font-mono text-v2-text-text-muted">{skill.name}</span>
+                              <span class="text-[9px] text-amber-400 font-semibold flex items-center gap-0.5">
+                                ★ 4.9
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <Show
+                          when={installed()}
+                          fallback={
+                            <span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-v2-background-bg-layer-02 text-v2-text-text-muted border border-v2-border-border-base">
+                              open-skills
+                            </span>
+                          }
+                        >
+                          <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            Ativa ✓
+                          </span>
+                        </Show>
+                      </div>
+
+                      <p class="text-[11px] text-v2-text-text-muted leading-relaxed line-clamp-2">
+                        {skill.description}
+                      </p>
+
+                      <div class="flex flex-wrap gap-1 pt-1">
+                        <For each={skill.tags.slice(0, 3)}>
+                          {(tag) => (
+                            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-v2-background-bg-layer-02 text-v2-text-text-muted border border-white/5">
+                              #{tag}
+                            </span>
+                          )}
+                        </For>
+                      </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-v2-border-border-base/40 flex items-center justify-between">
+                      <span class="text-[10px] font-mono text-v2-text-text-muted uppercase">
+                        {skill.category}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => toggleSkill(skill.name)}
+                        class={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                          installed()
+                            ? "bg-teal-500/20 text-teal-300 hover:bg-rose-500/20 hover:text-rose-300 border border-teal-500/30"
+                            : "bg-v2-background-bg-inverse text-v2-text-text-inverse hover:opacity-90 shadow-xs"
+                        }`}
+                      >
+                        {installed() ? "Instalada ✓" : "Instalar"}
+                      </button>
+                    </div>
+                  </div>
+                )
+              }}
+            </For>
+          </div>
+        </div>
+      </Show>
     </div>
   )
 }

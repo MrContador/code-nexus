@@ -611,6 +611,20 @@ html[data-user-theme="clear"] #root {
      the tint and wallpaper straight onto #root keeps one stable surface. */
 }
 
+/* Universal custom wallpaper support across all themes */
+html[data-has-wallpaper="true"]:not([data-user-theme="clear"]) #root,
+html[data-wallpaper="custom"]:not([data-user-theme="clear"]) #root {
+  background-image: linear-gradient(
+      rgba(10, 15, 26, 0.82),
+      rgba(10, 15, 26, 0.88)
+    ),
+    var(--wallpaper, none) !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+}
+
 /* Dialogs and popups are the exception: they stay opaque so the content over
    the desktop background is readable. Main app surfaces remain transparent. */
 html[data-user-theme="clear"] dialog,

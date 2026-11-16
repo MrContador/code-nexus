@@ -25,6 +25,13 @@ export interface SessionStatsData {
   }>
 }
 
+function toLocalDateString(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
+}
+
 export function formatCompactNumber(val: number): string {
   if (!val || isNaN(val) || val <= 0) return "0"
   if (val >= 1_000_000_000) return `${(val / 1_000_000_000).toFixed(1)}B`
@@ -203,45 +210,61 @@ export function UsageHistoryDashboard(props: { headerAction?: JSX.Element; showH
   const heatmapGrid = createMemo(() => {
     const totalWeeks = 31
     const totalDays = totalWeeks * 7
-    const now = new Date()
+    const today = new Date()
+    const dayOfWeek = today.getDay() // 0 is Sunday, 6 is Saturday
+
     // Activity map from stats
     const activityMap = new Map<string, number>()
     const st = statsData()
     if (st && st.activity) {
       for (const item of st.activity) {
-        activityMap.set(item.date, item.steps)
+        if (item.date) activityMap.set(item.date, item.steps)
       }
     }
     // Also include session updates from local DB
     for (const s of allSessions()) {
-      const d = new Date(s.time.updated).toISOString().slice(0, 10)
-      activityMap.set(d, (activityMap.get(d) || 0) + 1)
+      const ts = s.time?.updated || s.time?.created
+      if (typeof ts === "number" && !isNaN(ts) && ts > 0) {
+        const d = toLocalDateString(new Date(ts))
+        const tok = s.tokens ? (s.tokens.input || 0) + (s.tokens.output || 0) : 0
+        const weight = tok > 1000 ? Math.min(20, Math.ceil(tok / 1000)) : 1
+        activityMap.set(d, (activityMap.get(d) || 0) + weight)
+      }
     }
 
-    const weeks: Array<Array<{ date: string; steps: number; level: number; dayOfWeek: number }>> = []
+    const weeks: Array<Array<{ date: string; steps: number; level: number; dayOfWeek: number; isFuture: boolean }>> = []
     
-    // We want the last column to end on today or Saturday
-    // Calculate start date (totalDays ago)
-    const startDate = new Date(now)
-    startDate.setDate(startDate.getDate() - totalDays + 1)
+    // We want the last column to end on Saturday of the current week
+    const endDate = new Date(today)
+    endDate.setDate(today.getDate() + (6 - dayOfWeek))
+    endDate.setHours(23, 59, 59, 999)
+
+    const startDate = new Date(endDate)
+    startDate.setDate(endDate.getDate() - totalDays + 1)
+    startDate.setHours(0, 0, 0, 0)
 
     let currentDay = new Date(startDate)
-    let currentWeek: Array<{ date: string; steps: number; level: number; dayOfWeek: number }> = []
+    let currentWeek: Array<{ date: string; steps: number; level: number; dayOfWeek: number; isFuture: boolean }> = []
+    const todayStr = toLocalDateString(today)
 
     for (let i = 0; i < totalDays; i++) {
-      const dateStr = currentDay.toISOString().slice(0, 10)
-      const steps = activityMap.get(dateStr) || 0
+      const dateStr = toLocalDateString(currentDay)
+      const isFuture = dateStr > todayStr
+      const steps = isFuture ? 0 : (activityMap.get(dateStr) || 0)
       let level = 0
-      if (steps > 40) level = 4
-      else if (steps > 15) level = 3
-      else if (steps > 5) level = 2
-      else if (steps > 0) level = 1
+      if (!isFuture) {
+        if (steps > 40) level = 4
+        else if (steps > 15) level = 3
+        else if (steps > 5) level = 2
+        else if (steps > 0) level = 1
+      }
 
       currentWeek.push({
         date: dateStr,
         steps,
         level,
         dayOfWeek: currentDay.getDay(),
+        isFuture,
       })
 
       if (currentWeek.length === 7) {
@@ -266,9 +289,10 @@ export function UsageHistoryDashboard(props: { headerAction?: JSX.Element; showH
     const grid = heatmapGrid()
     grid.forEach((week, idx) => {
       if (week[0]) {
-        const m = new Date(week[0].date).getMonth()
+        const parts = week[0].date.split("-")
+        const m = parseInt(parts[1] || "1", 10) - 1
         if (m !== lastMonth && (idx - lastPushedIdx >= 3 || lastPushedIdx < 0)) {
-          result.push({ label: months[m], weekIndex: idx })
+          result.push({ label: months[m] || "", weekIndex: idx })
           lastMonth = m
           lastPushedIdx = idx
         }
@@ -285,17 +309,20 @@ export function UsageHistoryDashboard(props: { headerAction?: JSX.Element; showH
     
     // Aggregate session tokens by date
     for (const s of periodSessions()) {
-      const d = new Date(s.time.updated).toISOString().slice(0, 10)
-      const t = s.tokens
-      const tok = t ? (t.input || 0) + (t.output || 0) + (t.reasoning || 0) + (t.cache?.read || 0) + (t.cache?.write || 0) : 0
-      activityMap.set(d, (activityMap.get(d) || 0) + tok)
+      const ts = s.time?.updated || s.time?.created
+      if (typeof ts === "number" && !isNaN(ts) && ts > 0) {
+        const d = toLocalDateString(new Date(ts))
+        const t = s.tokens
+        const tok = t ? (t.input || 0) + (t.output || 0) + (t.reasoning || 0) + (t.cache?.read || 0) + (t.cache?.write || 0) : 0
+        activityMap.set(d, (activityMap.get(d) || 0) + tok)
+      }
     }
 
     // Generate 30 days
     for (let i = 29; i >= 0; i--) {
       const d = new Date(now)
       d.setDate(d.getDate() - i)
-      const dateStr = d.toISOString().slice(0, 10)
+      const dateStr = toLocalDateString(d)
       const label = `${d.getDate()}/${d.getMonth() + 1}`
       days.push({
         date: dateStr,
@@ -672,17 +699,18 @@ export function UsageHistoryDashboard(props: { headerAction?: JSX.Element; showH
                     <For each={week}>
                       {(day) => {
                         const levelClass = () => {
+                          if (day.isFuture) return "bg-white/[0.02] border border-white/[0.03] opacity-25 cursor-default pointer-events-none"
                           switch (day.level) {
                             case 1:
-                              return "bg-teal-900 border border-teal-800/40"
+                              return "bg-emerald-950/90 border border-emerald-800/60"
                             case 2:
-                              return "bg-teal-700"
+                              return "bg-emerald-800 border border-emerald-700/70"
                             case 3:
-                              return "bg-teal-500"
+                              return "bg-emerald-600 border border-emerald-500/80"
                             case 4:
-                              return "bg-teal-300 shadow-[0_0_8px_rgba(45,212,191,0.5)]"
+                              return "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.7)] border border-emerald-300"
                             default:
-                              return "bg-[#181d28]/70 border border-white/5"
+                              return "bg-[#131920] border border-white/5"
                           }
                         }
                         return (
@@ -703,11 +731,11 @@ export function UsageHistoryDashboard(props: { headerAction?: JSX.Element; showH
               <span>{heatmapGrid()[0]?.[0]?.date ? new Date(heatmapGrid()[0][0].date).toLocaleDateString("pt-BR", { month: "short", year: "numeric" }) : ""}</span>
               <div class="flex items-center gap-1.5">
                 <span>Menos</span>
-                <div class="w-3 h-3 rounded-[2px] bg-[#181d28]/70 border border-white/5" />
-                <div class="w-3 h-3 rounded-[2px] bg-teal-900" />
-                <div class="w-3 h-3 rounded-[2px] bg-teal-700" />
-                <div class="w-3 h-3 rounded-[2px] bg-teal-500" />
-                <div class="w-3 h-3 rounded-[2px] bg-teal-300" />
+                <div class="w-3 h-3 rounded-[2px] bg-[#131920] border border-white/5" />
+                <div class="w-3 h-3 rounded-[2px] bg-emerald-950 border border-emerald-800/60" />
+                <div class="w-3 h-3 rounded-[2px] bg-emerald-800 border border-emerald-700/70" />
+                <div class="w-3 h-3 rounded-[2px] bg-emerald-600 border border-emerald-500/80" />
+                <div class="w-3 h-3 rounded-[2px] bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]" />
                 <span>Mais</span>
               </div>
               <span>{new Date().toLocaleDateString("pt-BR", { month: "short", year: "numeric" })}</span>
@@ -723,7 +751,7 @@ export function UsageHistoryDashboard(props: { headerAction?: JSX.Element; showH
             <span class="text-xs font-semibold text-v2-text-text-base uppercase tracking-wider">
               Tokens diários (30d)
             </span>
-            <span class="text-xs text-v2-text-text-muted">Empilhados por modelo</span>
+            <span class="text-xs text-v2-text-text-muted">Consumo por dia</span>
           </div>
         </div>
 
@@ -748,7 +776,7 @@ export function UsageHistoryDashboard(props: { headerAction?: JSX.Element; showH
                     {/* Bar */}
                     <div
                       class={`w-full rounded-t-sm transition-all duration-200 group-hover:brightness-125 ${
-                        day.tokens > 0 ? "bg-teal-400" : "bg-white/5"
+                        day.tokens > 0 ? "bg-gradient-to-t from-emerald-600 to-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.3)]" : "bg-white/5"
                       }`}
                       style={{ height: `${heightPct}%` }}
                     />

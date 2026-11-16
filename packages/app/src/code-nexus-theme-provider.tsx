@@ -4,7 +4,7 @@ import { useTheme } from "@opencode/ui/theme/context"
 import type { DesktopTheme, HexColor, ThemeVariant } from "@opencode/ui/theme/types"
 import { KITS, palette, themeKit, type ThemeKit } from "./code-nexus-themes"
 import { applyTheme, readTheme } from "./code-nexus-theme-runtime"
-import { applyClear } from "./code-nexus-clear"
+import { applyClear, applyWallpaper, readClear } from "./code-nexus-clear"
 
 export function nativeTheme(kit: ThemeKit): DesktopTheme {
   const p = palette(kit) as Record<string, HexColor>
@@ -97,7 +97,12 @@ export function CodeNexusThemeProvider() {
     // The Clear kit is the only theme that paints the wallpaper and glass
     // settings. Apply them when it becomes active so a saved image survives
     // restarts without requiring a settings visit.
-    if (id === "clear") applyClear()
+    if (id === "clear") {
+      applyClear()
+    } else {
+      const clear = readClear()
+      if (clear.wallpaper === "custom") void applyWallpaper("custom")
+    }
   })
   onCleanup(() => {
     window.removeEventListener("code-nexus:theme-changed", sync)

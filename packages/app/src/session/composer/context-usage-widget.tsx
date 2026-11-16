@@ -68,6 +68,7 @@ export function SessionContextUsageWidget(props: { sessionID?: string }) {
   const [autoCompact, setAutoCompact] = createSignal<boolean>(getInitialAutoCompact())
   const [compactThreshold, setCompactThreshold] = createSignal<number>(getInitialThreshold())
   const [windowMultiplier, setWindowMultiplier] = createSignal<number>(getInitialWindow())
+  const [adjustWindowOpen, setAdjustWindowOpen] = createSignal<boolean>(false)
 
   const sessionInfo = createMemo(() => {
     if (!props.sessionID) return undefined
@@ -105,10 +106,10 @@ export function SessionContextUsageWidget(props: { sessionID?: string }) {
   const percentUsed = createMemo(() => {
     const total = currentTokens()
     const limit = effectiveContextWindow()
-    if (!total || total <= 0 || isNaN(total) || !isFinite(total)) return 0
-    if (!limit || limit <= 0 || isNaN(limit) || !isFinite(limit)) return 0
+    if (typeof total !== "number" || isNaN(total) || !isFinite(total) || total <= 0) return 0
+    if (typeof limit !== "number" || isNaN(limit) || !isFinite(limit) || limit <= 0) return 0
     const pct = Math.round((total / limit) * 100)
-    if (isNaN(pct) || !isFinite(pct)) return 0
+    if (typeof pct !== "number" || isNaN(pct) || !isFinite(pct)) return 0
     if (total > 0 && pct === 0) return 1
     return Math.min(100, Math.max(0, pct))
   })
@@ -281,7 +282,7 @@ export function SessionContextUsageWidget(props: { sessionID?: string }) {
               position: "fixed",
               bottom: `${buttonRect()!.bottom}px`,
               right: `${buttonRect()!.right}px`,
-              "max-height": `min(490px, calc(100vh - ${buttonRect()!.bottom + 16}px))`,
+              "max-height": `min(420px, calc(100vh - ${buttonRect()!.bottom + 16}px))`,
               "z-index": "99999",
             }}
             class="w-[330px] sm:w-[355px] bg-v2-background-bg-layer-01 border border-v2-border-border-base rounded-2xl shadow-2xl p-3.5 flex flex-col gap-2.5 text-v2-text-text-base animate-in fade-in zoom-in-95 duration-150 backdrop-blur-md overflow-y-auto overscroll-contain"
@@ -424,45 +425,62 @@ export function SessionContextUsageWidget(props: { sessionID?: string }) {
 
             {/* Ajustar janela Section (Cindy Reference) */}
             <div class="flex flex-col gap-1.5 pt-1.5 border-t border-v2-border-border-base/40">
-              <div class="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setAdjustWindowOpen(!adjustWindowOpen())}
+                class="flex items-center justify-between w-full py-1 px-2 rounded-lg bg-v2-background-bg-layer-02 hover:bg-v2-background-bg-layer-03 border border-v2-border-border-base transition-colors text-left"
+              >
                 <span class="text-xs font-semibold text-v2-text-text-base">Ajustar janela</span>
-                <span class="text-[11px] text-teal-400 font-mono font-medium">
-                  {formatCompact(effectiveContextWindow())}
-                </span>
-              </div>
-              <div class="text-[10px] text-v2-text-text-muted leading-tight">
-                <p class="font-medium text-v2-text-text-base">Esta sessão</p>
-                <p>Afeta apenas esta tarefa. Válido a partir da próxima mensagem.</p>
-                <p>Uma janela maior comporta mais conteúdo e pode custar mais.</p>
-              </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[11px] text-teal-400 font-mono font-medium">
+                    {formatCompact(effectiveContextWindow())}
+                  </span>
+                  <span class={`text-[10px] text-v2-text-text-muted transition-transform duration-150 ${adjustWindowOpen() ? "rotate-180" : ""}`}>
+                    ▼
+                  </span>
+                </div>
+              </button>
 
-              <div class="flex flex-col gap-1 pt-0.5">
-                <For
-                  each={[
-                    { pct: 0.25, label: "25% · " + formatCompact(baseContextWindow() * 0.25) },
-                    { pct: 0.5, label: "50% · " + formatCompact(baseContextWindow() * 0.5) },
-                    { pct: 0.75, label: "75% · " + formatCompact(baseContextWindow() * 0.75) },
-                    { pct: 1.0, label: "100% · " + formatCompact(baseContextWindow()) + " (Padrão do modelo)" },
-                  ]}
-                >
-                  {(opt) => (
-                    <button
-                      type="button"
-                      onClick={() => setWindowPref(opt.pct)}
-                      class={`w-full py-1 px-2.5 rounded-lg text-xs font-mono transition-colors border flex items-center justify-between ${
-                        windowMultiplier() === opt.pct
-                          ? "bg-teal-500/15 border-teal-500/40 text-teal-300 font-semibold"
-                          : "bg-v2-background-bg-layer-02 border-v2-border-border-base/70 text-v2-text-text-muted hover:text-v2-text-text-base hover:bg-v2-background-bg-layer-02/70"
-                      }`}
+              <Show when={adjustWindowOpen()}>
+                <div class="flex flex-col gap-1.5 p-2 rounded-lg bg-v2-background-bg-layer-02/50 border border-v2-border-border-base/50 animate-in fade-in duration-150">
+                  <div class="text-[10px] text-v2-text-text-muted leading-tight">
+                    <p class="font-medium text-v2-text-text-base">Esta sessão</p>
+                    <p>Afeta apenas esta tarefa. Válido a partir da próxima mensagem.</p>
+                    <p>Uma janela maior comporta mais conteúdo.</p>
+                  </div>
+
+                  <div class="flex flex-col gap-1 pt-1">
+                    <For
+                      each={[
+                        { pct: 0.25, label: "25% · " + formatCompact(baseContextWindow() * 0.25) },
+                        { pct: 0.5, label: "50% · " + formatCompact(baseContextWindow() * 0.5) },
+                        { pct: 0.75, label: "75% · " + formatCompact(baseContextWindow() * 0.75) },
+                        { pct: 1.0, label: "100% · " + formatCompact(baseContextWindow()) + " (Padrão do modelo)" },
+                      ]}
                     >
-                      <span class="text-[11px]">{opt.label}</span>
-                      <Show when={windowMultiplier() === opt.pct}>
-                        <span class="w-1.5 h-1.5 rounded-full bg-teal-400" />
-                      </Show>
-                    </button>
-                  )}
-                </For>
-              </div>
+                      {(opt) => (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setWindowPref(opt.pct)
+                            setAdjustWindowOpen(false)
+                          }}
+                          class={`w-full py-1 px-2.5 rounded text-xs font-mono transition-colors border flex items-center justify-between ${
+                            windowMultiplier() === opt.pct
+                              ? "bg-teal-500/15 border-teal-500/40 text-teal-300 font-semibold"
+                              : "bg-v2-background-bg-layer-01 border-v2-border-border-base/60 text-v2-text-text-muted hover:text-v2-text-text-base"
+                          }`}
+                        >
+                          <span class="text-[11px]">{opt.label}</span>
+                          <Show when={windowMultiplier() === opt.pct}>
+                            <span class="w-1.5 h-1.5 rounded-full bg-teal-400" />
+                          </Show>
+                        </button>
+                      )}
+                    </For>
+                  </div>
+                </div>
+              </Show>
             </div>
 
             {/* Model defaults link & Stanford NCM Link */}

@@ -101,19 +101,20 @@ export const DialogConnectProvider: Component<{
 
   const handleCustomProviderSave = async (data: any) => {
     try {
-      await sdk.config.provider.set(data.id, {
-        npm: data.npm,
-        name: data.name,
-        options: {
-          baseURL: data.baseURL,
-          apiKey: data.apiKey || undefined,
-          headers: data.headers || undefined,
-        },
-        models: data.models,
-      })
-      showToast(language.t("provider.custom.toast.saved"))
+      const electronSave = (window as any).electron?.["code-nexus"]?.saveCustomProvider
+      if (typeof electronSave === "function") {
+        const res = await electronSave(data)
+        if (!res.ok) throw new Error(res.error || "Erro ao salvar provedor nas configurações")
+      } else {
+        // Fallback for web / dev environment: store in local storage registry
+        const existing = JSON.parse(localStorage.getItem("codenexus_custom_providers") || "{}")
+        existing[data.id] = data
+        localStorage.setItem("codenexus_custom_providers", JSON.stringify(existing))
+      }
+
+      showToast(language.t("provider.custom.toast.saved") ?? "Provedor personalizado salvo com sucesso!")
       customProviderForm.close()
-      // Refresh the provider list
+      // Refresh the provider list and sync configs
       controller.refresh()
     } catch (error) {
       showToast(formatServerError(error))

@@ -122,5 +122,7 @@ contextBridge.exposeInMainWorld("electron", {
     // The renderer never receives the destination URL. It asks main to open
     // the site; main owns the constant and validates nothing from the caller.
     openWebsite: () => ipcRenderer.invoke("code-nexus:open-website") as Promise<{ ok: boolean }>,
+    saveCustomProvider: (data: any) =>
+      ipcRenderer.invoke("code-nexus:custom-provider-save", data) as Promise<{ ok: boolean; error?: string }>,
   },
 })
