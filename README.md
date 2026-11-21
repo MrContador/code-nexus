@@ -17,6 +17,10 @@
 
 O **Code Nexus Free** é um estúdio de engenharia e codificação autônoma projetado para desenvolvedores que exigem controle total sobre o ciclo de inferência de agentes, persistência de memória, orquestração de ferramentas e integração de modelos locais e remotos.
 
+
+<img width="1911" height="937" alt="A44C13AE-396E-46DE-88B7-30ABE609EDA7" src="https://github.com/user-attachments/assets/ea8ee597-25a8-45c4-802e-f6441b619b11" />
+
+
 ---
 
 ## 🧠 O Motor Híbrido LLM + NCM 2.0 (Next-Concept Modeling)
